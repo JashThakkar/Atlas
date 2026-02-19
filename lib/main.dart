@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme.dart';
 import 'core/router.dart';
 import 'services/notification_service.dart';
+import 'screens/exercise_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
