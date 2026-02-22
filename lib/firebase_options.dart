@@ -24,10 +24,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, Tar
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -37,10 +34,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -53,30 +47,50 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // These are placeholder values. Replace with actual Firebase config.
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyD7IroBFk7f7LxWMZgqxj3Bf-ypxQj5kDM',
+    appId: '1:723651142882:android:cd7f3c9f4cf758a096aabb',
+    messagingSenderId: '723651142882',
+    projectId: 'atlas-8af9d',
+    storageBucket: 'atlas-8af9d.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyB9ibuDZcyv2uh1IqK7n-dsbj2RRtVPjpY',
+    appId: '1:723651142882:ios:3e795cc44ef77bb796aabb',
+    messagingSenderId: '723651142882',
+    projectId: 'atlas-8af9d',
+    storageBucket: 'atlas-8af9d.firebasestorage.app',
     iosBundleId: 'com.example.atlas',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR_MACOS_API_KEY',
-    appId: 'YOUR_MACOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyB9ibuDZcyv2uh1IqK7n-dsbj2RRtVPjpY',
+    appId: '1:723651142882:ios:3e795cc44ef77bb796aabb',
+    messagingSenderId: '723651142882',
+    projectId: 'atlas-8af9d',
+    storageBucket: 'atlas-8af9d.firebasestorage.app',
     iosBundleId: 'com.example.atlas',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyCF54fsRbiTPWFhVkL4SBg0bzqQSO4KXpA',
+    appId: '1:723651142882:web:8075352df60f0b2c96aabb',
+    messagingSenderId: '723651142882',
+    projectId: 'atlas-8af9d',
+    authDomain: 'atlas-8af9d.firebaseapp.com',
+    storageBucket: 'atlas-8af9d.firebasestorage.app',
+    measurementId: 'G-VQ4RPZGH99',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCF54fsRbiTPWFhVkL4SBg0bzqQSO4KXpA',
+    appId: '1:723651142882:web:50ef470c1147b95096aabb',
+    messagingSenderId: '723651142882',
+    projectId: 'atlas-8af9d',
+    authDomain: 'atlas-8af9d.firebaseapp.com',
+    storageBucket: 'atlas-8af9d.firebasestorage.app',
+    measurementId: 'G-PP4BPWCCMW',
+  );
+
 }

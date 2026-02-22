@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../core/constants.dart';
 
@@ -10,27 +11,48 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   
+  void _logError(String operation, Object error, [StackTrace? stackTrace]) {
+    debugPrint('');
+    debugPrint('🔥 AuthService Error: $operation');
+    debugPrint('❌ Error: $error');
+    if (stackTrace != null) {
+      debugPrint('📋 Stack: $stackTrace');
+    }
+    debugPrint('');
+  }
+  
   // Sign up with email and password
   Future<UserCredential> signUpWithEmail({
     required String email,
     required String password,
     required String displayName,
   }) async {
-    final userCredential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    
-    // Create user profile in Firestore
-    if (userCredential.user != null) {
-      await _createUserProfile(
-        uid: userCredential.user!.uid,
+    try {
+      debugPrint('🔐 Attempting signup for email: $email');
+      
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
-        displayName: displayName,
+        password: password,
       );
+      
+      debugPrint('✅ User created successfully: ${userCredential.user?.uid}');
+      
+      // Create user profile in Firestore
+      if (userCredential.user != null) {
+        debugPrint('👤 Creating user profile in Firestore...');
+        await _createUserProfile(
+          uid: userCredential.user!.uid,
+          email: email,
+          displayName: displayName,
+        );
+        debugPrint('✅ User profile created successfully');
+      }
+      
+      return userCredential;
+    } catch (e, stackTrace) {
+      _logError('signUpWithEmail', e, stackTrace);
+      rethrow;
     }
-    
-    return userCredential;
   }
   
   // Sign in with email and password
@@ -38,15 +60,32 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      debugPrint('🔐 Attempting signin for email: $email');
+      
+      final result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      debugPrint('✅ User signed in successfully: ${result.user?.uid}');
+      return result;
+    } catch (e, stackTrace) {
+      _logError('signInWithEmail', e, stackTrace);
+      rethrow;
+    }
   }
   
   // Sign out
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      debugPrint('🚪 Signing out user: ${currentUser?.uid}');
+      await _auth.signOut();
+      debugPrint('✅ User signed out successfully');
+    } catch (e, stackTrace) {
+      _logError('signOut', e, stackTrace);
+      rethrow;
+    }
   }
   
   // Reset password

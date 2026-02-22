@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -34,20 +35,64 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
+      debugPrint('🔐 [REGISTER] Starting registration process...');
+      debugPrint('📧 [REGISTER] Email: ${_emailController.text.trim()}');
+      debugPrint('👤 [REGISTER] Display Name: ${_nameController.text.trim()}');
+      
       await authService.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
       );
+      
+      debugPrint('✅ [REGISTER] Registration successful - redirecting to home');
       if (mounted) context.go('/home');
-    } catch (e) {
+    } on FirebaseAuthException catch (e, stackTrace) {
+      debugPrint('❌ [REGISTER] Firebase Auth Error: ${e.code}');
+      debugPrint('📝 [REGISTER] Error Message: ${e.message}');
+      debugPrint('📋 [REGISTER] Stack Trace: $stackTrace');
+      
+      if (mounted) {
+        String errorMessage = 'Registration failed: ';
+        switch (e.code) {
+          case 'weak-password':
+            errorMessage += 'Password is too weak';
+            debugPrint('🔐 [REGISTER] Password too weak');
+            break;
+          case 'email-already-in-use':
+            errorMessage += 'Email is already registered';
+            debugPrint('📧 [REGISTER] Email already exists');
+            break;
+          case 'network-request-failed':
+            errorMessage += 'Network error. Check your internet connection and Firebase configuration.';
+            debugPrint('🌐 [REGISTER] Network request failed - possible connectivity issue');
+            break;
+          case 'invalid-email':
+            errorMessage += 'Invalid email format';
+            debugPrint('📧 [REGISTER] Invalid email format');
+            break;
+          default:
+            errorMessage += '${e.message ?? e.code}';
+            debugPrint('❓ [REGISTER] Unknown error: ${e.code}');
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ [REGISTER] General Error: $e');
+      debugPrint('📋 [REGISTER] Stack Trace: $stackTrace');
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration failed: ${e.toString()}')),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        debugPrint('🔄 [REGISTER] Registration process completed');
+      }
     }
   }
 
