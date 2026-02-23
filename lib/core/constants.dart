@@ -4,7 +4,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   
   // Firebase Collections
-  static const String usersCollection = 'users';
+  static const String usersCollection = 'User';
   static const String workoutsCollection = 'workouts';
   static const String exerciseLogsCollection = 'exercise_logs';
   static const String bodyMetricsCollection = 'body_metrics';

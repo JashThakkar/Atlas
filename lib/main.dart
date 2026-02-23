@@ -46,6 +46,7 @@ void main() async {
           debugPrint('   - Check if Firebase project exists');
           debugPrint('   - Check API key permissions');
         }
+      }
         
       // Load environment variables
       try {

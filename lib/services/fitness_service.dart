@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/exercise_log_model.dart';
 import '../models/body_metric_model.dart';
@@ -154,30 +155,90 @@ class FitnessService {
   
   // Get user statistics
   Future<Map<String, dynamic>> getUserStats(String userId) async {
-    final workoutsSnapshot = await _firestore
-        .collection(AppConstants.workoutsCollection)
-        .where('userId', isEqualTo: userId)
-        .where('completedAt', isNull: false)
-        .get();
-    
-    final exerciseLogsSnapshot = await _firestore
-        .collection(AppConstants.exerciseLogsCollection)
-        .where('userId', isEqualTo: userId)
-        .get();
-    
-    final totalWorkouts = workoutsSnapshot.docs.length;
-    final totalExercises = exerciseLogsSnapshot.docs.length;
-    
-    int totalMinutes = 0;
-    for (var doc in workoutsSnapshot.docs) {
-      final workout = WorkoutModel.fromFirestore(doc);
-      totalMinutes += workout.durationMinutes ?? 0;
+    try {
+      // First try to get from user_stats document (faster and includes default data)
+      final statsDoc = await _firestore
+          .collection('user_stats')
+          .doc(userId)
+          .get();
+      
+      if (statsDoc.exists) {
+        final data = statsDoc.data()!;
+        return {
+          'totalWorkouts': data['totalWorkouts'] ?? 0,
+          'totalMinutes': data['totalMinutes'] ?? 0,
+          'currentStreak': data['currentStreak'] ?? 0,
+          'longestStreak': data['longestStreak'] ?? 0,
+          'weeklyGoal': data['weeklyGoal'] ?? 3,
+          'favoriteExercise': data['favoriteExercise'] ?? 'Not set yet',
+          'totalExercises': data['totalExercises'] ?? 0, // Add this for compatibility
+        };
+      }
+      
+      // Fall back to calculating from individual documents if no stats document exists
+      debugPrint('📊 No user_stats found for $userId, calculating from workouts...');
+      
+      final workoutsSnapshot = await _firestore
+          .collection(AppConstants.workoutsCollection)
+          .where('userId', isEqualTo: userId)
+          .where('completedAt', isNull: false)
+          .get();
+      
+      final exerciseLogsSnapshot = await _firestore
+          .collection(AppConstants.exerciseLogsCollection)
+          .where('userId', isEqualTo: userId)
+          .get();
+      
+      final totalWorkouts = workoutsSnapshot.docs.length;
+      final totalExercises = exerciseLogsSnapshot.docs.length;
+      
+      int totalMinutes = 0;
+      for (var doc in workoutsSnapshot.docs) {
+        final workout = WorkoutModel.fromFirestore(doc);
+        totalMinutes += workout.durationMinutes ?? 0;
+      }
+      
+      final calculatedStats = {
+        'totalWorkouts': totalWorkouts,
+        'totalExercises': totalExercises,
+        'totalMinutes': totalMinutes,
+        'currentStreak': 0, // Would need more complex calculation
+        'longestStreak': 0, // Would need more complex calculation
+        'weeklyGoal': 3, // Default goal
+        'favoriteExercise': 'Not set yet',
+      };
+      
+      // Save calculated stats to user_stats document for future use
+      await _firestore
+          .collection('user_stats')
+          .doc(userId)
+          .set({
+        ...calculatedStats,
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+      
+      return calculatedStats;
+      
+    } catch (e) {
+      debugPrint('❌ Error getting user stats: $e');
+      
+      // If it's a network/availability issue, return default stats instead of failing
+      if (e.toString().contains('unavailable') || 
+          e.toString().contains('deadline-exceeded')) {
+        debugPrint('🌐 Network issue detected, returning default stats for offline use');
+      }
+      
+      // Return default stats if everything fails
+      return {
+        'totalWorkouts': 0,
+        'totalExercises': 0,
+        'totalMinutes': 0,
+        'currentStreak': 0,
+        'longestStreak': 0,
+        'weeklyGoal': 3,
+        'favoriteExercise': 'Not set yet',
+      };
     }
-    
-    return {
-      'totalWorkouts': totalWorkouts,
-      'totalExercises': totalExercises,
-      'totalMinutes': totalMinutes,
-    };
   }
 }

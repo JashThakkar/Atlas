@@ -121,7 +121,27 @@ class _BodyMetricsScreenState extends ConsumerState<BodyMetricsScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Error loading user')),
+        error: (error, __) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off, size: 48, color: Colors.orange),
+              const SizedBox(height: 16),
+              Text(
+                error.toString().contains('unavailable')
+                  ? 'Connection issue. Please check your internet and try again.'
+                  : 'Error loading data. Please try again.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => ref.invalidate(currentUserProvider),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

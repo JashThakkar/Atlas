@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fitness_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../services/auth_service.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -14,7 +15,85 @@ class HomeScreen extends ConsumerWidget {
     
     return currentUserAsync.when(
       data: (user) {
-        if (user == null) return const SizedBox();
+        // Handle authenticated user but no profile (network issues)
+        if (user == null) {
+          final authState = ref.watch(authStateProvider);
+          return authState.when(
+            data: (authUser) {
+              if (authUser != null) {
+                // User is authenticated but profile couldn't be loaded
+                return Scaffold(
+                  appBar: AppBar(title: const Text('Atlas Fitness')),
+                  drawer: const AppDrawer(),
+                  body: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.cloud_off_outlined, size: 64, color: Colors.blue),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Welcome to Atlas Fitness!',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Having trouble connecting to load your profile.\nYour data is safe and will sync when connection improves.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              ref.invalidate(currentUserProvider);
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Try Again'),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final authService = ref.read(authServiceProvider);
+                              final result = await authService.testFirestoreManually();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Test Result: $result'),
+                                    duration: const Duration(seconds: 5),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.bug_report),
+                            label: const Text('Run Diagnostics'),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              final authService = ref.read(authServiceProvider);
+                              authService.signOut();
+                            },
+                            icon: const Icon(Icons.logout),
+                            label: const Text('Sign Out'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              // No authenticated user
+              return const SizedBox();
+            },
+            loading: () => Scaffold(
+              appBar: AppBar(title: const Text('Atlas Fitness')),
+              body: const Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, __) => const SizedBox(),
+          );
+        }
         
         final statsAsync = ref.watch(userStatsProvider(user.uid));
         
@@ -172,11 +251,47 @@ class HomeScreen extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('Atlas Fitness')),
+        drawer: const AppDrawer(),
+        body: const Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const Scaffold(
-        body: Center(child: Text('Error loading user')),
+      error: (error, stackTrace) => Scaffold(
+        appBar: AppBar(title: const Text('Atlas Fitness')),
+        drawer: const AppDrawer(),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 64, color: Colors.orange),
+                const SizedBox(height: 16),
+                const Text(
+                  'Connection Issue',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString().contains('unavailable') 
+                    ? 'Unable to connect to the server. Please check your internet connection and try again.'
+                    : 'Error loading user data. Please try again.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Trigger a refresh by invalidating the provider
+                    ref.invalidate(currentUserProvider);
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

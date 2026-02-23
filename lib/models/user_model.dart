@@ -36,7 +36,9 @@ class UserModel {
       currentStreak: data['currentStreak'] ?? 0,
       longestStreak: data['longestStreak'] ?? 0,
       badges: List<String>.from(data['badges'] ?? []),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: data['createdAt'] != null 
+          ? (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(), // Fallback to now if missing
       lastWorkoutDate: data['lastWorkoutDate'] != null 
           ? (data['lastWorkoutDate'] as Timestamp).toDate() 
           : null,
