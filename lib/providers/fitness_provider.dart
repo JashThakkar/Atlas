@@ -23,7 +23,7 @@ final userWorkoutsProvider = StreamProvider.family<List<WorkoutModel>, String>((
   return fitnessService.getUserWorkouts(userId);
 });
 
-final userStatsProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, userId) {
+final userStatsProvider = StreamProvider.family<Map<String, dynamic>, String>((ref, userId) {
   final fitnessService = ref.watch(fitnessServiceProvider);
-  return fitnessService.getUserStats(userId);
+  return fitnessService.watchUserStats(userId);
 });

@@ -16,6 +16,15 @@ class FitnessService {
     
     // Update user's last workout date and streak
     await _updateUserWorkoutStreak(log.userId);
+
+    // Increment totalExercises in user_stats document
+    await _firestore
+        .collection('user_stats')
+        .doc(log.userId)
+        .set({
+      'totalExercises': FieldValue.increment(1),
+      'lastUpdated': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
   
   Stream<List<ExerciseLogModel>> getExerciseLogs(String userId) {
@@ -153,6 +162,32 @@ class FitnessService {
     });
   }
   
+  // Watch user statistics as a real-time stream
+  Stream<Map<String, dynamic>> watchUserStats(String userId) {
+    return _firestore
+        .collection('user_stats')
+        .doc(userId)
+        .snapshots()
+        .asyncMap((doc) async {
+      if (doc.exists) {
+        final data = doc.data()!;
+        return {
+          'totalWorkouts': data['totalWorkouts'] ?? 0,
+          'totalExercises': data['totalExercises'] ?? 0,
+          'totalMinutes': data['totalMinutes'] ?? 0,
+          'currentStreak': data['currentStreak'] ?? 0,
+          'longestStreak': data['longestStreak'] ?? 0,
+          'weeklyGoal': data['weeklyGoal'] ?? 3,
+          'favoriteExercise': data['favoriteExercise'] ?? 'Not set yet',
+        };
+      }
+      // No stats document yet — getUserStats will calculate and seed it,
+      // causing a second snapshot where the document will exist.
+      // This fallback path runs at most once per user.
+      return getUserStats(userId);
+    });
+  }
+
   // Get user statistics
   Future<Map<String, dynamic>> getUserStats(String userId) async {
     try {
