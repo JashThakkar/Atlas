@@ -10,6 +10,7 @@ import '../screens/workouts/workouts_screen.dart';
 import '../screens/workouts/workout_detail_screen.dart';
 import '../screens/workouts/generate_workout_screen.dart';
 import '../screens/exercises/exercise_logger_screen.dart';
+import '../screens/exercises/exercise_history_screen.dart';
 import '../screens/body_metrics/body_metrics_screen.dart';
 import '../screens/ai_chat/ai_chat_screen.dart';
 import '../screens/social/feed_screen.dart';
@@ -91,6 +92,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/exercise-logger',
         builder: (context, state) => const ExerciseLoggerScreen(),
+      ),
+      GoRoute(
+        path: '/exercise-history',
+        builder: (context, state) => const ExerciseHistoryScreen(),
       ),
       GoRoute(
         path: '/body-metrics',
