@@ -57,6 +57,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     if (user == null) return;
 
     _messageController.clear();
+    FocusScope.of(context).unfocus();
     ref.read(chatProvider.notifier).sendMessage(message, user.uid);
     _scrollToBottom();
   }
