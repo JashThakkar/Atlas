@@ -83,22 +83,22 @@ class AppDrawer extends ConsumerWidget {
                   context.push('/feed');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.message),
-                title: const Text('Messages'),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/messages');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_add),
-                title: const Text('Find Friends'),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/discover-friends');
-                },
-              ),
+              // ListTile(
+              //   leading: const Icon(Icons.message),
+              //   title: const Text('Messages'),
+              //   onTap: () {
+              //     Navigator.pop(context);
+              //     context.push('/messages');
+              //   },
+              // ),
+              // ListTile(
+              //   leading: const Icon(Icons.person_add),
+              //   title: const Text('Find Friends'),
+              //   onTap: () {
+              //     Navigator.pop(context);
+              //     context.push('/discover-friends');
+              //   },
+              // ),
               ListTile(
                 leading: Badge(
                   isLabelVisible: incomingCount > 0,
