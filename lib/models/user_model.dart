@@ -11,6 +11,7 @@ class UserModel {
   final List<String> badges;
   final DateTime createdAt;
   final DateTime? lastWorkoutDate;
+  final bool isAdmin;
   
   UserModel({
     required this.uid,
@@ -23,6 +24,7 @@ class UserModel {
     this.badges = const [],
     required this.createdAt,
     this.lastWorkoutDate,
+    this.isAdmin = false,
   });
   
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -42,6 +44,7 @@ class UserModel {
       lastWorkoutDate: data['lastWorkoutDate'] != null 
           ? (data['lastWorkoutDate'] as Timestamp).toDate() 
           : null,
+      isAdmin: data['isAdmin'] ?? false,
     );
   }
   
@@ -58,6 +61,7 @@ class UserModel {
       'lastWorkoutDate': lastWorkoutDate != null 
           ? Timestamp.fromDate(lastWorkoutDate!) 
           : null,
+      'isAdmin': isAdmin,
     };
   }
   
@@ -69,6 +73,7 @@ class UserModel {
     int? longestStreak,
     List<String>? badges,
     DateTime? lastWorkoutDate,
+    bool? isAdmin,
   }) {
     return UserModel(
       uid: uid,
@@ -81,6 +86,7 @@ class UserModel {
       badges: badges ?? this.badges,
       createdAt: createdAt,
       lastWorkoutDate: lastWorkoutDate ?? this.lastWorkoutDate,
+      isAdmin: isAdmin ?? this.isAdmin,
     );
   }
 }

@@ -102,8 +102,9 @@ class HomeScreen extends ConsumerWidget {
             title: const Text('Atlas Fitness'),
             actions: [
               IconButton(
-                icon: const Icon(Icons.chat),
-                onPressed: () => context.push('/ai-chat'),
+                icon: const Icon(Icons.message),
+                onPressed: () => context.push('/messages'),
+                tooltip: 'Messages',
               ),
               IconButton(
                 icon: const Icon(Icons.notifications),

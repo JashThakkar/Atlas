@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -15,9 +16,7 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              // Edit profile
-            },
+            onPressed: () => context.push('/edit-profile'),
           ),
         ],
       ),

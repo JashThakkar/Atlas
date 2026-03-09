@@ -151,4 +151,14 @@ class NotificationService {
   Future<void> cancelAll() async {
     await _notifications.cancelAll();
   }
+
+  Future<void> cancelNotification(int id) async {
+    await _notifications.cancel(id);
+  }
+
+  // Notification IDs for specific types
+  static const int dailyTipId = 0;
+  static const int workoutReminderId = 1;
+  static const int streakAlertId = 2;
+  static const int challengeCompletionId = 3;
 }

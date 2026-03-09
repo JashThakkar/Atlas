@@ -17,6 +17,22 @@ class ChallengeService {
             .map((doc) => ChallengeModel.fromFirestore(doc))
             .toList());
   }
+
+  // Create a new challenge (admin only)
+  Future<String> createChallenge(ChallengeModel challenge) async {
+    final docRef = await _firestore
+        .collection(AppConstants.challengesCollection)
+        .add(challenge.toFirestore());
+    return docRef.id;
+  }
+
+  // Delete a challenge (admin only)
+  Future<void> deleteChallenge(String challengeId) async {
+    await _firestore
+        .collection(AppConstants.challengesCollection)
+        .doc(challengeId)
+        .delete();
+  }
   
   // Join challenge
   Future<void> joinChallenge(String challengeId, String userId) async {

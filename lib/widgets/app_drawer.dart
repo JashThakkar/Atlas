@@ -76,6 +76,22 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text('Messages'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/messages');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_add),
+              title: const Text('Find Friends'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/discover-friends');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.emoji_events),
               title: const Text('Challenges'),
               onTap: () {
@@ -83,6 +99,20 @@ class AppDrawer extends ConsumerWidget {
                 context.push('/challenges');
               },
             ),
+            if (user?.isAdmin == true) ...[
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings,
+                    color: Colors.orange),
+                title: const Text('Admin Panel',
+                    style: TextStyle(
+                        color: Colors.orange, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/admin');
+                },
+              ),
+            ],
             const Divider(),
             ListTile(
               leading: const Icon(Icons.settings),

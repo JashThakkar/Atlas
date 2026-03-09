@@ -17,6 +17,11 @@ class FeedScreen extends ConsumerWidget {
         title: const Text('Community Feed'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_add),
+            onPressed: () => context.push('/discover-friends'),
+            tooltip: 'Find Friends',
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/create-post'),
           ),
