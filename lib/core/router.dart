@@ -17,6 +17,7 @@ import '../screens/social/feed_screen.dart';
 import '../screens/social/create_post_screen.dart';
 import '../screens/social/post_detail_screen.dart';
 import '../screens/social/discover_friends_screen.dart';
+import '../screens/social/user_profile_screen.dart';
 import '../screens/social/friend_requests_screen.dart';
 import '../screens/social/messages_screen.dart';
 import '../screens/social/chat_screen.dart';
@@ -123,6 +124,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/discover-friends',
         builder: (context, state) => const DiscoverFriendsScreen(),
+      ),
+      GoRoute(
+        path: '/user/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          final extra = state.extra as Map<String, dynamic>?;
+          return UserProfileScreen(
+            userId: userId,
+            userName: extra?['userName'] as String? ?? 'User',
+          );
+        },
       ),
       GoRoute(
         path: '/friend-requests',

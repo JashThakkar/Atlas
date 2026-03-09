@@ -190,10 +190,20 @@ class FitnessService {
         .asyncMap((doc) async {
       if (doc.exists) {
         final data = doc.data()!;
+        final totalWorkouts = data['totalWorkouts'] ?? 0;
+        final totalMinutes = data['totalMinutes'] ?? 0;
+
+        // Backfill totalMinutes for users who completed workouts before the
+        // counter was added. Fire-and-forget: the resulting Firestore write will
+        // trigger a new snapshot automatically.
+        if (totalMinutes == 0 && totalWorkouts > 0) {
+          _backfillTotalMinutes(userId);
+        }
+
         return {
-          'totalWorkouts': data['totalWorkouts'] ?? 0,
+          'totalWorkouts': totalWorkouts,
           'totalExercises': data['totalExercises'] ?? 0,
-          'totalMinutes': data['totalMinutes'] ?? 0,
+          'totalMinutes': totalMinutes,
           'currentStreak': data['currentStreak'] ?? 0,
           'longestStreak': data['longestStreak'] ?? 0,
           'weeklyGoal': data['weeklyGoal'] ?? 3,
@@ -205,6 +215,35 @@ class FitnessService {
       // This fallback path runs at most once per user.
       return getUserStats(userId);
     });
+  }
+
+  /// Recalculates [totalMinutes] from completed workouts and writes the result
+  /// back to [AppConstants.userStatsCollection]. Called when the stat doc
+  /// exists but [totalMinutes] is still 0 (backfill for pre-fix users).
+  Future<void> _backfillTotalMinutes(String userId) async {
+    try {
+      // Query workouts that have a recorded duration (set on completion).
+      final snapshot = await _firestore
+          .collection(AppConstants.workoutsCollection)
+          .where('userId', isEqualTo: userId)
+          .where('durationMinutes', isGreaterThan: 0)
+          .get();
+
+      int total = 0;
+      for (final doc in snapshot.docs) {
+        total += (doc.data()['durationMinutes'] as int? ?? 0);
+      }
+
+      if (total > 0) {
+        await _firestore
+            .collection(AppConstants.userStatsCollection)
+            .doc(userId)
+            .update({'totalMinutes': total});
+        debugPrint('✅ Backfilled totalMinutes=$total for $userId');
+      }
+    } catch (e) {
+      debugPrint('❌ Error backfilling totalMinutes: $e');
+    }
   }
 
   // Get user statistics
@@ -232,10 +271,12 @@ class FitnessService {
       // Fall back to calculating from individual documents if no stats document exists
       debugPrint('📊 No user_stats found for $userId, calculating from workouts...');
       
+      // Use durationMinutes > 0 as the proxy for "completed" because
+      // Firestore does not support isNull: false queries.
       final workoutsSnapshot = await _firestore
           .collection(AppConstants.workoutsCollection)
           .where('userId', isEqualTo: userId)
-          .where('completedAt', isNull: false)
+          .where('durationMinutes', isGreaterThan: 0)
           .get();
       
       final exerciseLogsSnapshot = await _firestore

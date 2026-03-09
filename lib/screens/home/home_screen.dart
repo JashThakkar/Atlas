@@ -211,6 +211,10 @@ class HomeScreen extends ConsumerWidget {
                         label: 'Badges',
                         value: user.badges.length.toString(),
                         color: Colors.purple,
+                        onTap: () => showModalBottomSheet<void>(
+                          context: context,
+                          builder: (_) => _BadgesSheet(badges: user.badges),
+                        ),
                       ),
                     ],
                   ),
@@ -462,6 +466,102 @@ class _RecentWorkoutTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BadgesSheet extends StatelessWidget {
+  const _BadgesSheet({required this.badges});
+
+  final List<String> badges;
+
+  String _formatBadgeLabel(String badgeId) {
+    return badgeId
+        .replaceAll('_', ' ')
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Your Badges',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            if (badges.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    Icon(Icons.emoji_events,
+                        size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No badges earned yet.\nComplete workouts to earn them!',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: badges.map((badgeId) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.amber, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.emoji_events,
+                          size: 36,
+                          color: Colors.amber,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          _formatBadgeLabel(badgeId),
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.bodySmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

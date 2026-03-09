@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/social_provider.dart';
 import '../../services/social_service.dart';
@@ -158,13 +159,19 @@ class _DiscoverFriendsScreenState
                   final isRelated = _relatedIds.contains(uid);
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: photoUrl != null
-                          ? CachedNetworkImageProvider(photoUrl)
-                          : null,
-                      child: photoUrl == null
-                          ? Text(name[0].toUpperCase())
-                          : null,
+                    leading: GestureDetector(
+                      onTap: () => context.push(
+                        '/user/$uid',
+                        extra: {'userName': name},
+                      ),
+                      child: CircleAvatar(
+                        backgroundImage: photoUrl != null
+                            ? CachedNetworkImageProvider(photoUrl)
+                            : null,
+                        child: photoUrl == null
+                            ? Text(name[0].toUpperCase())
+                            : null,
+                      ),
                     ),
                     title: Text(name),
                     subtitle: bio != null && bio.isNotEmpty

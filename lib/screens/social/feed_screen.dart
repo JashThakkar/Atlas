@@ -95,30 +95,42 @@ class _PostCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    backgroundImage: post.userPhotoUrl != null
-                        ? NetworkImage(post.userPhotoUrl!)
-                        : null,
-                    child: post.userPhotoUrl == null
-                        ? Text(post.userName.isNotEmpty
-                            ? post.userName[0].toUpperCase()
-                            : '?')
-                        : null,
+                  GestureDetector(
+                    onTap: () => context.push(
+                      '/user/${post.userId}',
+                      extra: {'userName': post.userName},
+                    ),
+                    child: CircleAvatar(
+                      backgroundImage: post.userPhotoUrl != null
+                          ? NetworkImage(post.userPhotoUrl!)
+                          : null,
+                      child: post.userPhotoUrl == null
+                          ? Text(post.userName.isNotEmpty
+                              ? post.userName[0].toUpperCase()
+                              : '?')
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.userName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          timeago.format(post.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                    child: GestureDetector(
+                      onTap: () => context.push(
+                        '/user/${post.userId}',
+                        extra: {'userName': post.userName},
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            post.userName,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            timeago.format(post.createdAt),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
