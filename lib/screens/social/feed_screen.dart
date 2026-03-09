@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/social_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/post_model.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -80,6 +81,9 @@ class _PostCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserId = ref.watch(authStateProvider).value?.uid ?? '';
+    final isLiked = post.isLikedBy(currentUserId);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
@@ -96,7 +100,9 @@ class _PostCard extends ConsumerWidget {
                         ? NetworkImage(post.userPhotoUrl!)
                         : null,
                     child: post.userPhotoUrl == null
-                        ? Text(post.userName[0].toUpperCase())
+                        ? Text(post.userName.isNotEmpty
+                            ? post.userName[0].toUpperCase()
+                            : '?')
                         : null,
                   ),
                   const SizedBox(width: 12),
@@ -135,15 +141,25 @@ class _PostCard extends ConsumerWidget {
                 children: [
                   IconButton(
                     icon: Icon(
-                      post.likes.isNotEmpty ? Icons.favorite : Icons.favorite_border,
-                      color: post.likes.isNotEmpty ? Colors.red : null,
+                      isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: isLiked ? Colors.red : null,
                     ),
-                    onPressed: () {
-                      // Toggle like
-                    },
+                    onPressed: currentUserId.isEmpty
+                        ? null
+                        : () async {
+                            final socialService =
+                                ref.read(socialServiceProvider);
+                            if (isLiked) {
+                              await socialService.unlikePost(
+                                  post.id!, currentUserId);
+                            } else {
+                              await socialService.likePost(
+                                  post.id!, currentUserId);
+                            }
+                          },
                   ),
                   Text('${post.likes.length}'),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 16),
                   IconButton(
                     icon: const Icon(Icons.comment_outlined),
                     onPressed: () => context.push('/post/${post.id}'),

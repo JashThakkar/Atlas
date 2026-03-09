@@ -18,6 +18,11 @@ final userPostsProvider = StreamProvider.family<List<PostModel>, String>((ref, u
   return socialService.getUserPosts(userId);
 });
 
+final postProvider = StreamProvider.family<PostModel?, String>((ref, postId) {
+  final socialService = ref.watch(socialServiceProvider);
+  return socialService.getPost(postId);
+});
+
 final postCommentsProvider = StreamProvider.family<List<CommentModel>, String>((ref, postId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getPostComments(postId);

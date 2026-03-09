@@ -36,6 +36,14 @@ class SocialService {
             .map((doc) => PostModel.fromFirestore(doc))
             .toList());
   }
+
+  Stream<PostModel?> getPost(String postId) {
+    return _firestore
+        .collection(AppConstants.postsCollection)
+        .doc(postId)
+        .snapshots()
+        .map((doc) => doc.exists ? PostModel.fromFirestore(doc) : null);
+  }
   
   Future<void> likePost(String postId, String userId) async {
     await _firestore.collection(AppConstants.postsCollection).doc(postId).update({
