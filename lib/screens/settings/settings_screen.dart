@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/notification_provider.dart';
 import '../../services/notification_service.dart';
+import '../../services/ai_diet_coach.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -14,6 +15,9 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _dailyTipEnabled = true;
   bool _workoutReminderEnabled = true;
+  final _apiKeyController = TextEditingController();
+  bool _apiKeyObscured = true;
+  bool _apiKeySaving = false;
 
   @override
   void initState() {
@@ -21,12 +25,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _loadPreferences();
   }
 
+  @override
+  void dispose() {
+    _apiKeyController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedKey = prefs.getString(AIDietCoach.prefsKey) ?? '';
     setState(() {
       _dailyTipEnabled = prefs.getBool('dailyTipEnabled') ?? true;
       _workoutReminderEnabled = prefs.getBool('workoutReminderEnabled') ?? true;
+      _apiKeyController.text = savedKey;
     });
+  }
+
+  Future<void> _saveApiKey() async {
+    setState(() => _apiKeySaving = true);
+    try {
+      final coach = AIDietCoach();
+      await coach.saveApiKey(_apiKeyController.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('API key saved!')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _apiKeySaving = false);
+    }
   }
 
   Future<void> _savePreference(String key, bool value) async {
@@ -42,6 +69,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: ListView(
         children: [
+          // ── AI Diet Coach ──────────────────────────────────────────────
+          const ListTile(
+            leading: Icon(Icons.smart_toy),
+            title: Text('AI Diet Coach'),
+            subtitle: Text('Enter your OpenAI API key to enable the AI coach'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _apiKeyController,
+                  obscureText: _apiKeyObscured,
+                  decoration: InputDecoration(
+                    labelText: 'OpenAI API Key',
+                    hintText: 'sk-...',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(_apiKeyObscured
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      onPressed: () =>
+                          setState(() => _apiKeyObscured = !_apiKeyObscured),
+                      tooltip: _apiKeyObscured ? 'Show key' : 'Hide key',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Get a free key at https://platform.openai.com/api-keys',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _apiKeySaving ? null : _saveApiKey,
+                    child: _apiKeySaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Save API Key'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+
+          // ── Notifications ─────────────────────────────────────────────
           const ListTile(
             leading: Icon(Icons.notifications),
             title: Text('Notifications'),

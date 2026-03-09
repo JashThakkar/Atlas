@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ai_provider.dart';
+import '../../services/ai_diet_coach.dart';
 
 class AIChatScreen extends ConsumerStatefulWidget {
   const AIChatScreen({super.key});
@@ -13,6 +15,20 @@ class AIChatScreen extends ConsumerStatefulWidget {
 class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _apiKeyConfigured = false; // safe default; updated by _checkApiKey()
+
+  @override
+  void initState() {
+    super.initState();
+    _checkApiKey();
+  }
+
+  Future<void> _checkApiKey() async {
+    final key = await AIDietCoach().getApiKey();
+    if (mounted) {
+      setState(() => _apiKeyConfigured = key.isNotEmpty);
+    }
+  }
 
   @override
   void dispose() {
@@ -64,6 +80,30 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
       ),
       body: Column(
         children: [
+          // ── API key banner ─────────────────────────────────────────────
+          if (!_apiKeyConfigured)
+            MaterialBanner(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              content: const Text(
+                'OpenAI API key not configured. The AI coach won\'t work until you add it.',
+              ),
+              leading: const Icon(Icons.warning_amber_rounded,
+                  color: Colors.orange),
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    await context.push('/settings');
+                    // Re-check after returning from settings
+                    _checkApiKey();
+                  },
+                  child: const Text('Go to Settings'),
+                ),
+              ],
+            ),
+
+          // ── Messages ───────────────────────────────────────────────────
           Expanded(
             child: chatState.messages.isEmpty
                 ? Center(
