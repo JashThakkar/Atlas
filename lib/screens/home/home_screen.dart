@@ -182,7 +182,7 @@ class HomeScreen extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
+                    childAspectRatio: 1.3,
                     children: [
                       _StatCard(
                         icon: Icons.fitness_center,
@@ -315,7 +315,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -353,7 +353,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: (MediaQuery.of(context).size.width - 56) / 2,
+      width: (MediaQuery.of(context).size.width - 44) / 2,
       child: ElevatedButton.icon(
         icon: Icon(icon),
         label: Text(label),
