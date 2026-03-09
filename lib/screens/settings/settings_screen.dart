@@ -73,7 +73,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const ListTile(
             leading: Icon(Icons.smart_toy),
             title: Text('AI Diet Coach'),
-            subtitle: Text('Enter your OpenAI API key to enable the AI coach'),
+            subtitle: Text('Enter your Gemini API key to enable the AI coach'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -84,8 +84,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   controller: _apiKeyController,
                   obscureText: _apiKeyObscured,
                   decoration: InputDecoration(
-                    labelText: 'OpenAI API Key',
-                    hintText: 'sk-...',
+                    labelText: 'Gemini API Key',
+                    hintText: 'AIza...',
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(_apiKeyObscured
@@ -99,7 +99,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Get a free key at https://platform.openai.com/api-keys',
+                  'Get a free key at https://aistudio.google.com/app/apikey',
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall

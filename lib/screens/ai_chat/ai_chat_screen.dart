@@ -85,7 +85,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
             MaterialBanner(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               content: const Text(
-                'OpenAI API key not configured. The AI coach won\'t work until you add it.',
+                'Gemini API key not configured. The AI coach won\'t work until you add it.',
               ),
               leading: const Icon(Icons.warning_amber_rounded,
                   color: Colors.orange),
