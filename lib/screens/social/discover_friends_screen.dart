@@ -18,7 +18,33 @@ class _DiscoverFriendsScreenState
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _results = [];
   bool _isSearching = false;
-  final Set<String> _pendingRequests = {};
+  /// UIDs that already have any relationship with the current user
+  /// (pending sent, pending received, or accepted).
+  Set<String> _relatedIds = {};
+  /// UIDs of users to whom the current user has sent a pending request.
+  Set<String> _pendingOutgoing = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingRelationships();
+  }
+
+  Future<void> _loadExistingRelationships() async {
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) return;
+    final socialService = ref.read(socialServiceProvider);
+    final results = await Future.wait([
+      socialService.getRelatedUserIds(currentUser.uid),
+      socialService.getPendingOutgoingIds(currentUser.uid),
+    ]);
+    if (mounted) {
+      setState(() {
+        _relatedIds = results[0];
+        _pendingOutgoing = results[1];
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -54,7 +80,10 @@ class _DiscoverFriendsScreenState
   Future<void> _sendRequest(String toUserId) async {
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
-    setState(() => _pendingRequests.add(toUserId));
+    setState(() {
+      _pendingOutgoing.add(toUserId);
+      _relatedIds.add(toUserId);
+    });
     try {
       final socialService = ref.read(socialServiceProvider);
       await socialService.sendFriendRequest(currentUser.uid, toUserId);
@@ -64,7 +93,10 @@ class _DiscoverFriendsScreenState
         );
       }
     } catch (e) {
-      setState(() => _pendingRequests.remove(toUserId));
+      setState(() {
+        _pendingOutgoing.remove(toUserId);
+        _relatedIds.remove(toUserId);
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
@@ -122,7 +154,8 @@ class _DiscoverFriendsScreenState
                   final name = user['displayName'] ?? 'Unknown';
                   final bio = user['bio'] as String?;
                   final photoUrl = user['photoUrl'] as String?;
-                  final isPending = _pendingRequests.contains(uid);
+                  final isPending = _pendingOutgoing.contains(uid);
+                  final isRelated = _relatedIds.contains(uid);
 
                   return ListTile(
                     leading: CircleAvatar(
@@ -146,10 +179,15 @@ class _DiscoverFriendsScreenState
                             label: Text('Sent'),
                             avatar: Icon(Icons.check, size: 16),
                           )
-                        : ElevatedButton(
-                            onPressed: () => _sendRequest(uid),
-                            child: const Text('Add'),
-                          ),
+                        : isRelated
+                            ? const Chip(
+                                label: Text('Connected'),
+                                avatar: Icon(Icons.people, size: 16),
+                              )
+                            : ElevatedButton(
+                                onPressed: () => _sendRequest(uid),
+                                child: const Text('Add'),
+                              ),
                   );
                 },
               ),

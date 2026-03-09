@@ -77,6 +77,24 @@ class SocialService {
   
   // Friends
   Future<void> sendFriendRequest(String fromUserId, String toUserId) async {
+    // Guard: don't create a duplicate request if one already exists
+    final existing = await _firestore
+        .collection(AppConstants.friendsCollection)
+        .where('fromUserId', isEqualTo: fromUserId)
+        .where('toUserId', isEqualTo: toUserId)
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) return;
+
+    // Guard: also check the reverse direction (they may have sent us one)
+    final reverse = await _firestore
+        .collection(AppConstants.friendsCollection)
+        .where('fromUserId', isEqualTo: toUserId)
+        .where('toUserId', isEqualTo: fromUserId)
+        .limit(1)
+        .get();
+    if (reverse.docs.isNotEmpty) return;
+
     await _firestore.collection(AppConstants.friendsCollection).add({
       'fromUserId': fromUserId,
       'toUserId': toUserId,
@@ -103,6 +121,8 @@ class SocialService {
       rejectFriendRequest(friendshipId);
   
   Stream<List<String>> getUserFriends(String userId) {
+    // Firestore doesn't support OR queries directly, so we stream accepted
+    // friendships that involve this user by filtering in memory.
     return _firestore
         .collection(AppConstants.friendsCollection)
         .where('status', isEqualTo: 'accepted')
@@ -112,13 +132,46 @@ class SocialService {
       for (var doc in snapshot.docs) {
         final data = doc.data();
         if (data['fromUserId'] == userId) {
-          friendIds.add(data['toUserId']);
+          friendIds.add(data['toUserId'] as String);
         } else if (data['toUserId'] == userId) {
-          friendIds.add(data['fromUserId']);
+          friendIds.add(data['fromUserId'] as String);
         }
       }
       return friendIds;
     });
+  }
+
+  /// Returns the UIDs of all users with whom [userId] has a relationship
+  /// (pending in either direction, or accepted).
+  Future<Set<String>> getRelatedUserIds(String userId) async {
+    final sent = await _firestore
+        .collection(AppConstants.friendsCollection)
+        .where('fromUserId', isEqualTo: userId)
+        .get();
+    final received = await _firestore
+        .collection(AppConstants.friendsCollection)
+        .where('toUserId', isEqualTo: userId)
+        .get();
+    final ids = <String>{};
+    for (final doc in sent.docs) {
+      ids.add(doc.data()['toUserId'] as String);
+    }
+    for (final doc in received.docs) {
+      ids.add(doc.data()['fromUserId'] as String);
+    }
+    return ids;
+  }
+
+  /// Returns the UIDs of users to whom [userId] has sent a pending request.
+  Future<Set<String>> getPendingOutgoingIds(String userId) async {
+    final snapshot = await _firestore
+        .collection(AppConstants.friendsCollection)
+        .where('fromUserId', isEqualTo: userId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+    return snapshot.docs
+        .map((doc) => doc.data()['toUserId'] as String)
+        .toSet();
   }
 
   // Incoming friend requests for a user
