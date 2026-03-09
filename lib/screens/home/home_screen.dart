@@ -192,6 +192,7 @@ class HomeScreen extends ConsumerWidget {
                         label: 'Workouts',
                         value: stats['totalWorkouts'].toString(),
                         color: Colors.blue,
+                        onTap: () => context.push('/workouts'),
                       ),
                       _StatCard(
                         icon: Icons.list_alt,
