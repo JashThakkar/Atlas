@@ -19,7 +19,7 @@ class FitnessService {
 
     // Increment totalExercises in user_stats document
     await _firestore
-        .collection('user_stats')
+        .collection(AppConstants.userStatsCollection)
         .doc(log.userId)
         .set({
       'totalExercises': FieldValue.increment(1),
@@ -105,16 +105,35 @@ class FitnessService {
   Future<void> completeWorkout(
     String workoutId,
     int intensityRating,
-    int durationMinutes,
-  ) async {
-    await _firestore
+    int durationMinutes, {
+    required String userId,
+  }) async {
+    final batch = _firestore.batch();
+
+    final workoutRef = _firestore
         .collection(AppConstants.workoutsCollection)
-        .doc(workoutId)
-        .update({
+        .doc(workoutId);
+    batch.update(workoutRef, {
       'completedAt': Timestamp.now(),
       'intensityRating': intensityRating,
       'durationMinutes': durationMinutes,
     });
+
+    // Keep user_stats in sync so the dashboard counters reflect the new workout.
+    final statsRef = _firestore
+        .collection(AppConstants.userStatsCollection)
+        .doc(userId);
+    batch.set(
+      statsRef,
+      {
+        'totalWorkouts': FieldValue.increment(1),
+        'totalMinutes': FieldValue.increment(durationMinutes),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+
+    await batch.commit();
   }
   
   // Update user workout streak
@@ -165,7 +184,7 @@ class FitnessService {
   // Watch user statistics as a real-time stream
   Stream<Map<String, dynamic>> watchUserStats(String userId) {
     return _firestore
-        .collection('user_stats')
+        .collection(AppConstants.userStatsCollection)
         .doc(userId)
         .snapshots()
         .asyncMap((doc) async {
@@ -193,7 +212,7 @@ class FitnessService {
     try {
       // First try to get from user_stats document (faster and includes default data)
       final statsDoc = await _firestore
-          .collection('user_stats')
+          .collection(AppConstants.userStatsCollection)
           .doc(userId)
           .get();
       
@@ -245,7 +264,7 @@ class FitnessService {
       
       // Save calculated stats to user_stats document for future use
       await _firestore
-          .collection('user_stats')
+          .collection(AppConstants.userStatsCollection)
           .doc(userId)
           .set({
         ...calculatedStats,

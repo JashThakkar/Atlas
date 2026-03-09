@@ -35,12 +35,18 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
       return;
     }
 
+    // Read userId from the already-loaded workout provider (no extra network call).
+    final workout =
+        ref.read(workoutDetailProvider(widget.workoutId)).value;
+    if (workout == null) return;
+
     try {
       final fitnessService = ref.read(fitnessServiceProvider);
       await fitnessService.completeWorkout(
         widget.workoutId,
         _intensityRating!,
         _durationMinutes!,
+        userId: workout.userId,
       );
 
       if (mounted) {

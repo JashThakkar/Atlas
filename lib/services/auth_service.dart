@@ -174,7 +174,7 @@ class AuthService {
       
       // Create user stats document with default values
       await _firestore
-          .collection('user_stats')
+          .collection(AppConstants.userStatsCollection)
           .doc(uid)
           .set({
         'totalWorkouts': 0,

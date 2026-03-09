@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../models/workout_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fitness_provider.dart';
 import '../../widgets/app_drawer.dart';
@@ -96,6 +98,7 @@ class HomeScreen extends ConsumerWidget {
         }
         
         final statsAsync = ref.watch(userStatsProvider(user.uid));
+        final workoutsAsync = ref.watch(userWorkoutsProvider(user.uid));
         
         return Scaffold(
           appBar: AppBar(
@@ -215,7 +218,55 @@ class HomeScreen extends ConsumerWidget {
                   error: (_, __) => const Text('Error loading stats'),
                 ),
                 const SizedBox(height: 24),
-                
+
+                // Recent Workouts
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Workouts',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/workouts'),
+                      child: const Text('View All'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                workoutsAsync.when(
+                  data: (workouts) {
+                    if (workouts.isEmpty) {
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.fitness_center,
+                                  color: Colors.grey[400]),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'No workouts yet. Generate one to get started!',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    final recent = workouts.take(3).toList();
+                    return Column(
+                      children: recent
+                          .map((w) => _RecentWorkoutTile(workout: w))
+                          .toList(),
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => const Text('Error loading workouts'),
+                ),
+
                 // Quick Actions
                 Text(
                   'Quick Actions',
@@ -337,6 +388,77 @@ class _StatCard extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentWorkoutTile extends StatelessWidget {
+  const _RecentWorkoutTile({required this.workout});
+
+  final WorkoutModel workout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () => context.push('/workouts/${workout.id}'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: workout.isCompleted
+                    ? Colors.green.shade100
+                    : Theme.of(context).colorScheme.primaryContainer,
+                child: Icon(
+                  workout.isCompleted
+                      ? Icons.check_circle
+                      : Icons.fitness_center,
+                  color: workout.isCompleted
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workout.workoutName,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${workout.difficulty} · ${workout.exercises.length} exercises',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                DateFormat.MMMd().format(
+                  workout.completedAt ?? workout.createdAt,
+                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[500],
+                    ),
               ),
             ],
           ),
