@@ -3,7 +3,22 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AIDietCoach {
-  final String _apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
+  // Lazily cached API key. Reads from dotenv on first access and catches
+  // NotInitializedException so the service degrades gracefully when .env
+  // is not loaded rather than crashing.
+  String? _cachedApiKey;
+  String get _apiKey => _cachedApiKey ??= _loadApiKey();
+
+  String _loadApiKey() {
+    try {
+      return dotenv.env['OPENAI_API_KEY'] ?? '';
+    } on Exception {
+      // dotenv not yet initialized (e.g. .env file absent). Treat as
+      // unconfigured so sendMessage returns the human-readable prompt.
+      return '';
+    }
+  }
+
   final String _baseUrl = 'https://api.openai.com/v1/chat/completions';
   
   Future<String> sendMessage({

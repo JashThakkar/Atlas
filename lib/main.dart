@@ -53,7 +53,9 @@ void main() async {
         await dotenv.load(fileName: ".env");
         debugPrint('📄 .env file loaded successfully');
       } catch (e) {
-        // .env file not found, using default values
+        // .env file not found or unreadable — initialize with an empty map so
+        // that dotenv.env never throws NotInitializedException downstream.
+        dotenv.testLoad(fileInput: '');
         debugPrint('⚠️ Warning: .env file not found. Using default configuration.');
       }
       
