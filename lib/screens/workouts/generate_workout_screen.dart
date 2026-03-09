@@ -51,7 +51,7 @@ class _GenerateWorkoutScreenState extends ConsumerState<GenerateWorkoutScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Workout generated successfully!')),
         );
-        context.go('/workouts/$workoutId');
+        context.push('/workouts/$workoutId');
       }
     } catch (e) {
       if (mounted) {

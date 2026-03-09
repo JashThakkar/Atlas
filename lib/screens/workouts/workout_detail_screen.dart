@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/workout_model.dart';
 import '../../providers/fitness_provider.dart';
@@ -46,7 +47,11 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Workout completed! 🎉')),
         );
-        Navigator.of(context).pop();
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/workouts');
+        }
       }
     } catch (e) {
       if (mounted) {
