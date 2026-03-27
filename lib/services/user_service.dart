@@ -1,73 +1,82 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../models/user_model.dart';
-import '../core/constants.dart';
+import 'database_service.dart';
 
 class UserService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final DatabaseService _db = DatabaseService();
 
   Future<UserModel?> getUserById(String userId) async {
-    final doc = await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .get();
-    if (!doc.exists) return null;
-    return UserModel.fromFirestore(doc);
+    final db = await _db.database;
+    final rows = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return UserModel.fromMap(rows.first);
   }
 
   Future<void> updateUserProfile(
     String userId,
     Map<String, dynamic> userData,
   ) async {
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .update(userData);
+    final db = await _db.database;
+    await db.update(
+      'users',
+      userData,
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+    _db.notify('users');
   }
 
+  /// Saves the picked image file path locally as the user's photo URL.
+  /// Returns the file path so callers can use it immediately.
   Future<String> uploadProfileImage(String userId, File imageFile) async {
-    final ref = _storage.ref().child('profile_images/$userId/profile.jpg');
-    final uploadTask = await ref.putFile(
-      imageFile,
-      SettableMetadata(contentType: 'image/jpeg'),
-    );
-    final downloadUrl = await uploadTask.ref.getDownloadURL();
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .update({'photoUrl': downloadUrl});
-    return downloadUrl;
+    final photoUrl = imageFile.path;
+    await updateUserProfile(userId, {'photoUrl': photoUrl});
+    return photoUrl;
   }
 
   Future<bool> checkAdminStatus(String userId) async {
-    final doc = await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .get();
-    if (!doc.exists) return false;
-    final data = doc.data() as Map<String, dynamic>;
-    return data['isAdmin'] ?? false;
+    final db = await _db.database;
+    final rows = await db.query(
+      'users',
+      columns: ['isAdmin'],
+      where: 'id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return false;
+    return (rows.first['isAdmin'] as int? ?? 0) == 1;
   }
 
   Future<void> awardBadge(String userId, String badgeId) async {
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .update({
-      'badges': FieldValue.arrayUnion([badgeId]),
-    });
+    final user = await getUserById(userId);
+    if (user == null) return;
+    if (user.badges.contains(badgeId)) return;
+    final updatedBadges = [...user.badges, badgeId];
+    await updateUserProfile(
+      userId,
+      {'badges': DatabaseService.encodeList(updatedBadges)},
+    );
   }
 
-  Stream<UserModel?> watchUser(String userId) {
-    return _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) return null;
-      return UserModel.fromFirestore(doc);
-    });
+  Stream<UserModel?> watchUser(String userId) async* {
+    await for (final _ in _db.watchTable('users')) {
+      yield await getUserById(userId);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> searchUsers(String query) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      'users',
+      where: 'displayName LIKE ?',
+      whereArgs: ['$query%'],
+      limit: 20,
+    );
+    return rows.toList();
   }
 }

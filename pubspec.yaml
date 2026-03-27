@@ -40,13 +40,13 @@ dependencies:
   # Navigation
   go_router: ^14.6.2
   
-  # Firebase
+  # Firebase (auth only)
   firebase_core: ^3.8.1
   firebase_auth: ^5.3.4
-  cloud_firestore: ^5.5.2
-  firebase_messaging: ^15.2.1
-  cloud_functions: ^5.2.1
-  firebase_storage: ^12.3.7
+
+  # Local Database
+  sqflite: ^2.3.3
+  path: ^1.9.0
   
   # API & HTTP
   http: ^1.2.2

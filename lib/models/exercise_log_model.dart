@@ -1,16 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class ExerciseSet {
   final int setNumber;
   final int reps;
   final double? weight;
-  
+
   ExerciseSet({
     required this.setNumber,
     required this.reps,
     this.weight,
   });
-  
+
   Map<String, dynamic> toMap() {
     return {
       'setNumber': setNumber,
@@ -18,12 +18,12 @@ class ExerciseSet {
       'weight': weight,
     };
   }
-  
+
   factory ExerciseSet.fromMap(Map<String, dynamic> map) {
     return ExerciseSet(
-      setNumber: map['setNumber'] ?? 0,
-      reps: map['reps'] ?? 0,
-      weight: map['weight']?.toDouble(),
+      setNumber: map['setNumber'] as int? ?? 0,
+      reps: map['reps'] as int? ?? 0,
+      weight: (map['weight'] as num?)?.toDouble(),
     );
   }
 }
@@ -36,7 +36,7 @@ class ExerciseLogModel {
   final List<ExerciseSet> sets;
   final String? notes;
   final DateTime date;
-  
+
   ExerciseLogModel({
     this.id,
     required this.userId,
@@ -46,38 +46,52 @@ class ExerciseLogModel {
     this.notes,
     required this.date,
   });
-  
-  factory ExerciseLogModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+
+  factory ExerciseLogModel.fromMap(Map<String, dynamic> map) {
+    List<ExerciseSet> parseSets(dynamic raw) {
+      if (raw == null) return [];
+      final List<dynamic> list;
+      if (raw is String) {
+        list = jsonDecode(raw) as List<dynamic>;
+      } else if (raw is List) {
+        list = raw;
+      } else {
+        return [];
+      }
+      return list
+          .map((s) => ExerciseSet.fromMap(s as Map<String, dynamic>))
+          .toList();
+    }
+
     return ExerciseLogModel(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      exerciseName: data['exerciseName'] ?? '',
-      category: data['category'],
-      sets: (data['sets'] as List<dynamic>?)
-              ?.map((set) => ExerciseSet.fromMap(set as Map<String, dynamic>))
-              .toList() ??
-          [],
-      notes: data['notes'],
-      date: (data['date'] as Timestamp).toDate(),
+      id: map['id'] as String?,
+      userId: map['userId'] as String? ?? '',
+      exerciseName: map['exerciseName'] as String? ?? '',
+      category: map['category'] as String?,
+      sets: parseSets(map['sets']),
+      notes: map['notes'] as String?,
+      date: DateTime.fromMillisecondsSinceEpoch(
+          map['date'] as int? ?? DateTime.now().millisecondsSinceEpoch),
     );
   }
-  
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'userId': userId,
       'exerciseName': exerciseName,
       'category': category,
-      'sets': sets.map((set) => set.toMap()).toList(),
+      'sets': jsonEncode(sets.map((s) => s.toMap()).toList()),
       'notes': notes,
-      'date': Timestamp.fromDate(date),
+      'date': date.millisecondsSinceEpoch,
     };
   }
-  
+
   int get totalVolume {
-    return sets.fold(0, (sum, set) => sum + (set.reps * (set.weight ?? 0)).toInt());
+    return sets.fold(
+        0, (sum, set) => sum + (set.reps * (set.weight ?? 0)).toInt());
   }
-  
+
   int get totalReps {
     return sets.fold(0, (sum, set) => sum + set.reps);
   }

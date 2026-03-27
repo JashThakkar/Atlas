@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/database_service.dart';
 
 class UserModel {
   final String uid;
@@ -12,7 +12,7 @@ class UserModel {
   final DateTime createdAt;
   final DateTime? lastWorkoutDate;
   final bool isAdmin;
-  
+
   UserModel({
     required this.uid,
     required this.email,
@@ -26,45 +26,43 @@ class UserModel {
     this.lastWorkoutDate,
     this.isAdmin = false,
   });
-  
-  factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+
+  factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      uid: doc.id,
-      email: data['email'] ?? '',
-      displayName: data['displayName'] ?? '',
-      photoUrl: data['photoUrl'],
-      bio: data['bio'],
-      currentStreak: data['currentStreak'] ?? 0,
-      longestStreak: data['longestStreak'] ?? 0,
-      badges: List<String>.from(data['badges'] ?? []),
-      createdAt: data['createdAt'] != null 
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(), // Fallback to now if missing
-      lastWorkoutDate: data['lastWorkoutDate'] != null 
-          ? (data['lastWorkoutDate'] as Timestamp).toDate() 
+      uid: map['id'] as String,
+      email: map['email'] as String? ?? '',
+      displayName: map['displayName'] as String? ?? '',
+      photoUrl: map['photoUrl'] as String?,
+      bio: map['bio'] as String?,
+      currentStreak: map['currentStreak'] as int? ?? 0,
+      longestStreak: map['longestStreak'] as int? ?? 0,
+      badges: List<String>.from(
+          DatabaseService.decodeList(map['badges'] as String?)),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+          map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
+      lastWorkoutDate: map['lastWorkoutDate'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['lastWorkoutDate'] as int)
           : null,
-      isAdmin: data['isAdmin'] ?? false,
+      isAdmin: (map['isAdmin'] as int? ?? 0) == 1,
     );
   }
-  
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
+      'id': uid,
       'email': email,
       'displayName': displayName,
       'photoUrl': photoUrl,
       'bio': bio,
       'currentStreak': currentStreak,
       'longestStreak': longestStreak,
-      'badges': badges,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'lastWorkoutDate': lastWorkoutDate != null 
-          ? Timestamp.fromDate(lastWorkoutDate!) 
-          : null,
-      'isAdmin': isAdmin,
+      'badges': DatabaseService.encodeList(badges),
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'lastWorkoutDate': lastWorkoutDate?.millisecondsSinceEpoch,
+      'isAdmin': isAdmin ? 1 : 0,
     };
   }
-  
+
   UserModel copyWith({
     String? displayName,
     String? photoUrl,

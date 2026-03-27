@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/database_service.dart';
 
 class ChatRoom {
   final String id;
@@ -15,25 +15,25 @@ class ChatRoom {
     this.lastMessageSenderId,
   });
 
-  factory ChatRoom.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory ChatRoom.fromMap(Map<String, dynamic> map) {
     return ChatRoom(
-      id: doc.id,
-      participants: List<String>.from(data['participants'] ?? []),
-      lastMessage: data['lastMessage'],
-      lastMessageTime: data['lastMessageTime'] != null
-          ? (data['lastMessageTime'] as Timestamp).toDate()
+      id: map['id'] as String,
+      participants: List<String>.from(
+          DatabaseService.decodeList(map['participants'] as String?)),
+      lastMessage: map['lastMessage'] as String?,
+      lastMessageTime: map['lastMessageTime'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['lastMessageTime'] as int)
           : null,
-      lastMessageSenderId: data['lastMessageSenderId'],
+      lastMessageSenderId: map['lastMessageSenderId'] as String?,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
-      'participants': participants,
+      'id': id,
+      'participants': DatabaseService.encodeList(participants),
       'lastMessage': lastMessage,
-      'lastMessageTime':
-          lastMessageTime != null ? Timestamp.fromDate(lastMessageTime!) : null,
+      'lastMessageTime': lastMessageTime?.millisecondsSinceEpoch,
       'lastMessageSenderId': lastMessageSenderId,
     };
   }

@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/workout_model.dart';
 import '../../providers/fitness_provider.dart';
-import '../../core/constants.dart';
+import '../../services/database_service.dart';
 
-final workoutDetailProvider = StreamProvider.family<WorkoutModel?, String>((ref, workoutId) {
-  return FirebaseFirestore.instance
-      .collection(AppConstants.workoutsCollection)
-      .doc(workoutId)
-      .snapshots()
-      .map((doc) => doc.exists ? WorkoutModel.fromFirestore(doc) : null);
+final _sqliteDb = DatabaseService();
+
+final workoutDetailProvider = StreamProvider.family<WorkoutModel?, String>((ref, workoutId) async* {
+  Future<WorkoutModel?> query() async {
+    final db = await _sqliteDb.database;
+    final rows = await db.query(
+      'workouts',
+      where: 'id = ?',
+      whereArgs: [workoutId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return WorkoutModel.fromMap(rows.first);
+  }
+
+  yield await query();
+  await for (final _ in _sqliteDb.watchTable('workouts')) {
+    yield await query();
+  }
 });
 
 class WorkoutDetailScreen extends ConsumerStatefulWidget {

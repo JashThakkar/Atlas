@@ -1,18 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class WorkoutExercise {
   final String exerciseName;
   final int sets;
   final int reps;
   final String? notes;
-  
+
   WorkoutExercise({
     required this.exerciseName,
     required this.sets,
     required this.reps,
     this.notes,
   });
-  
+
   Map<String, dynamic> toMap() {
     return {
       'exerciseName': exerciseName,
@@ -21,13 +21,13 @@ class WorkoutExercise {
       'notes': notes,
     };
   }
-  
+
   factory WorkoutExercise.fromMap(Map<String, dynamic> map) {
     return WorkoutExercise(
-      exerciseName: map['exerciseName'] ?? '',
-      sets: map['sets'] ?? 3,
-      reps: map['reps'] ?? 10,
-      notes: map['notes'],
+      exerciseName: map['exerciseName'] as String? ?? '',
+      sets: map['sets'] as int? ?? 3,
+      reps: map['reps'] as int? ?? 10,
+      notes: map['notes'] as String?,
     );
   }
 }
@@ -40,9 +40,9 @@ class WorkoutModel {
   final List<WorkoutExercise> exercises;
   final int? durationMinutes;
   final DateTime? completedAt;
-  final int? intensityRating; // 1-5 rating user provides after workout
+  final int? intensityRating;
   final DateTime createdAt;
-  
+
   WorkoutModel({
     this.id,
     required this.userId,
@@ -54,39 +54,52 @@ class WorkoutModel {
     this.intensityRating,
     required this.createdAt,
   });
-  
-  factory WorkoutModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+
+  factory WorkoutModel.fromMap(Map<String, dynamic> map) {
+    List<WorkoutExercise> parseExercises(dynamic raw) {
+      if (raw == null) return [];
+      final List<dynamic> list;
+      if (raw is String) {
+        list = jsonDecode(raw) as List<dynamic>;
+      } else if (raw is List) {
+        list = raw;
+      } else {
+        return [];
+      }
+      return list
+          .map((e) => WorkoutExercise.fromMap(e as Map<String, dynamic>))
+          .toList();
+    }
+
     return WorkoutModel(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      workoutName: data['workoutName'] ?? '',
-      difficulty: data['difficulty'] ?? 'Beginner',
-      exercises: (data['exercises'] as List<dynamic>?)
-              ?.map((ex) => WorkoutExercise.fromMap(ex as Map<String, dynamic>))
-              .toList() ??
-          [],
-      durationMinutes: data['durationMinutes'],
-      completedAt: data['completedAt'] != null
-          ? (data['completedAt'] as Timestamp).toDate()
+      id: map['id'] as String?,
+      userId: map['userId'] as String? ?? '',
+      workoutName: map['workoutName'] as String? ?? '',
+      difficulty: map['difficulty'] as String? ?? 'Beginner',
+      exercises: parseExercises(map['exercises']),
+      durationMinutes: map['durationMinutes'] as int?,
+      completedAt: map['completedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['completedAt'] as int)
           : null,
-      intensityRating: data['intensityRating'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      intensityRating: map['intensityRating'] as int?,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+          map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
     );
   }
-  
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'userId': userId,
       'workoutName': workoutName,
       'difficulty': difficulty,
-      'exercises': exercises.map((ex) => ex.toMap()).toList(),
+      'exercises': jsonEncode(exercises.map((e) => e.toMap()).toList()),
       'durationMinutes': durationMinutes,
-      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'completedAt': completedAt?.millisecondsSinceEpoch,
       'intensityRating': intensityRating,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.millisecondsSinceEpoch,
     };
   }
-  
+
   bool get isCompleted => completedAt != null;
 }

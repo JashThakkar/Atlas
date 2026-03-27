@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
@@ -11,43 +10,29 @@ import 'firebase_options.dart';
 import 'core/theme.dart';
 import 'core/router.dart';
 import 'services/notification_service.dart';
+import 'services/database_service.dart';
 
 void main() async {
   // Run the app in a guarded zone to catch all errors
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    
+
     // Set up global error handling
     _setupErrorHandling();
-    
+
     try {
-      // Initialize Firebase
       debugPrint('🚀 Starting Atlas Fitness App...');
+
+      // Initialize Firebase (authentication only)
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      debugPrint('✅ Firebase initialized successfully');
-      
-      // Add detailed Firebase connectivity test
-      try {
-        final auth = FirebaseAuth.instance;
-        debugPrint('🔐 Firebase Auth instance created: ${auth.app.name}');
-        debugPrint('📋 Firebase project: ${auth.app.options.projectId}');
-        debugPrint('🔑 Firebase API key: ${auth.app.options.apiKey.substring(0, 10)}...');
-        
-        // Test if we can reach Firebase servers
-        await auth.fetchSignInMethodsForEmail('nonexistent-test@example.com');
-        debugPrint('✅ Firebase connectivity test successful');
-      } catch (e) {
-        debugPrint('❌ Firebase connectivity test failed: $e');
-        if (e.toString().contains('network-request-failed')) {
-          debugPrint('🔥 NETWORK ISSUE: Cannot reach Firebase servers');
-          debugPrint('   - Check internet connection');
-          debugPrint('   - Check if Firebase project exists');
-          debugPrint('   - Check API key permissions');
-        }
-      }
-        
+      debugPrint('✅ Firebase Auth initialized successfully');
+
+      // Initialize local SQLite database
+      await DatabaseService().database;
+      debugPrint('✅ SQLite database initialized successfully');
+
       // Load environment variables
       try {
         await dotenv.load(fileName: ".env");
@@ -58,21 +43,19 @@ void main() async {
         dotenv.testLoad(fileInput: '');
         debugPrint('⚠️ Warning: .env file not found. Using default configuration.');
       }
-      
+
       // Initialize notifications
       final notificationService = NotificationService();
       await notificationService.initialize();
       await notificationService.requestPermissions();
       debugPrint('🔔 Notifications initialized successfully');
-      
     } catch (e, stackTrace) {
       debugPrint('❌ Error during initialization: $e');
       _logError('Initialization Error', e, stackTrace);
     }
-    
+
     debugPrint('🚀 Launching app...');
     runApp(const ProviderScope(child: MyApp()));
-    
   }, (error, stack) {
     // This catches any errors that occur outside of Flutter's error handling
     _logError('Unhandled Zone Error', error, stack);

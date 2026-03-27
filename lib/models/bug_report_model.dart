@@ -1,15 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class BugReportModel {
   final String? id;
   final String userId;
   final String userName;
   final String title;
   final String description;
-  final String priority; // Low, Medium, High
-  final String status; // Submitted, In Progress, Resolved
+  final String priority;
+  final String status;
   final DateTime createdAt;
-  
+
   BugReportModel({
     this.id,
     required this.userId,
@@ -20,30 +18,31 @@ class BugReportModel {
     this.status = 'Submitted',
     required this.createdAt,
   });
-  
-  factory BugReportModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+
+  factory BugReportModel.fromMap(Map<String, dynamic> map) {
     return BugReportModel(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      userName: data['userName'] ?? '',
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      priority: data['priority'] ?? 'Medium',
-      status: data['status'] ?? 'Submitted',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      id: map['id'] as String?,
+      userId: map['userId'] as String? ?? '',
+      userName: map['userName'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      priority: map['priority'] as String? ?? 'Medium',
+      status: map['status'] as String? ?? 'Submitted',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+          map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch),
     );
   }
-  
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'userId': userId,
       'userName': userName,
       'title': title,
       'description': description,
       'priority': priority,
       'status': status,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.millisecondsSinceEpoch,
     };
   }
 }

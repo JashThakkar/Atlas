@@ -1,312 +1,366 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '../models/post_model.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
-import '../core/constants.dart';
+import 'database_service.dart';
 
 class SocialService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
-  // Posts
+  final DatabaseService _db = DatabaseService();
+  final _uuid = const Uuid();
+
+  // ── Posts ──────────────────────────────────────────────────────────────────
+
   Future<String> createPost(PostModel post) async {
-    final docRef = await _firestore
-        .collection(AppConstants.postsCollection)
-        .add(post.toFirestore());
-    return docRef.id;
-  }
-  
-  Stream<List<PostModel>> getFeed({int limit = 50}) {
-    return _firestore
-        .collection(AppConstants.postsCollection)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PostModel.fromFirestore(doc))
-            .toList());
-  }
-  
-  Stream<List<PostModel>> getUserPosts(String userId) {
-    return _firestore
-        .collection(AppConstants.postsCollection)
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PostModel.fromFirestore(doc))
-            .toList());
+    final db = await _db.database;
+    final map = post.toMap();
+    final id = map['id'] as String? ?? _uuid.v4();
+    map['id'] = id;
+    await db.insert('posts', map);
+    _db.notify('posts');
+    return id;
   }
 
-  Stream<PostModel?> getPost(String postId) {
-    return _firestore
-        .collection(AppConstants.postsCollection)
-        .doc(postId)
-        .snapshots()
-        .map((doc) => doc.exists ? PostModel.fromFirestore(doc) : null);
+  Stream<List<PostModel>> getFeed({int limit = 50}) async* {
+    await for (final _ in _db.watchTable('posts')) {
+      yield await _queryFeed(limit);
+    }
   }
-  
+
+  Future<List<PostModel>> _queryFeed(int limit) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      'posts',
+      orderBy: 'createdAt DESC',
+      limit: limit,
+    );
+    return rows.map(PostModel.fromMap).toList();
+  }
+
+  Stream<List<PostModel>> getUserPosts(String userId) async* {
+    await for (final _ in _db.watchTable('posts')) {
+      yield await _queryUserPosts(userId);
+    }
+  }
+
+  Future<List<PostModel>> _queryUserPosts(String userId) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      'posts',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'createdAt DESC',
+    );
+    return rows.map(PostModel.fromMap).toList();
+  }
+
+  Stream<PostModel?> getPost(String postId) async* {
+    await for (final _ in _db.watchTable('posts')) {
+      final db = await _db.database;
+      final rows = await db.query(
+        'posts',
+        where: 'id = ?',
+        whereArgs: [postId],
+        limit: 1,
+      );
+      yield rows.isEmpty ? null : PostModel.fromMap(rows.first);
+    }
+  }
+
   Future<void> likePost(String postId, String userId) async {
-    await _firestore.collection(AppConstants.postsCollection).doc(postId).update({
-      'likes': FieldValue.arrayUnion([userId]),
-    });
+    final db = await _db.database;
+    final rows = await db.query(
+      'posts',
+      where: 'id = ?',
+      whereArgs: [postId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final post = PostModel.fromMap(rows.first);
+    if (post.likes.contains(userId)) return;
+    final updated = [...post.likes, userId];
+    await db.update(
+      'posts',
+      {'likes': DatabaseService.encodeList(updated)},
+      where: 'id = ?',
+      whereArgs: [postId],
+    );
+    _db.notify('posts');
   }
-  
+
   Future<void> unlikePost(String postId, String userId) async {
-    await _firestore.collection(AppConstants.postsCollection).doc(postId).update({
-      'likes': FieldValue.arrayRemove([userId]),
-    });
+    final db = await _db.database;
+    final rows = await db.query(
+      'posts',
+      where: 'id = ?',
+      whereArgs: [postId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final post = PostModel.fromMap(rows.first);
+    final updated = post.likes.where((id) => id != userId).toList();
+    await db.update(
+      'posts',
+      {'likes': DatabaseService.encodeList(updated)},
+      where: 'id = ?',
+      whereArgs: [postId],
+    );
+    _db.notify('posts');
   }
-  
-  // Comments
+
+  // ── Comments ───────────────────────────────────────────────────────────────
+
   Future<void> addComment(CommentModel comment) async {
-    await _firestore
-        .collection(AppConstants.commentsCollection)
-        .add(comment.toFirestore());
-    
-    // Increment comment count on post
-    await _firestore
-        .collection(AppConstants.postsCollection)
-        .doc(comment.postId)
-        .update({
-      'commentCount': FieldValue.increment(1),
-    });
+    final db = await _db.database;
+    final map = comment.toMap();
+    map['id'] ??= _uuid.v4();
+    await db.insert('comments', map);
+    await db.rawUpdate(
+      'UPDATE posts SET commentCount = commentCount + 1 WHERE id = ?',
+      [comment.postId],
+    );
+    _db.notify('comments');
+    _db.notify('posts');
   }
-  
-  Stream<List<CommentModel>> getPostComments(String postId) {
-    return _firestore
-        .collection(AppConstants.commentsCollection)
-        .where('postId', isEqualTo: postId)
-        .orderBy('createdAt', descending: false)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => CommentModel.fromFirestore(doc))
-            .toList());
+
+  Stream<List<CommentModel>> getPostComments(String postId) async* {
+    await for (final _ in _db.watchTable('comments')) {
+      yield await _queryComments(postId);
+    }
   }
-  
-  // Friends
+
+  Future<List<CommentModel>> _queryComments(String postId) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      'comments',
+      where: 'postId = ?',
+      whereArgs: [postId],
+      orderBy: 'createdAt ASC',
+    );
+    return rows.map(CommentModel.fromMap).toList();
+  }
+
+  // ── Friends ────────────────────────────────────────────────────────────────
+
   Future<void> sendFriendRequest(String fromUserId, String toUserId) async {
-    // Guard: don't create a duplicate request if one already exists
-    final existing = await _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('fromUserId', isEqualTo: fromUserId)
-        .where('toUserId', isEqualTo: toUserId)
-        .limit(1)
-        .get();
-    if (existing.docs.isNotEmpty) return;
-
-    // Guard: also check the reverse direction (they may have sent us one)
-    final reverse = await _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('fromUserId', isEqualTo: toUserId)
-        .where('toUserId', isEqualTo: fromUserId)
-        .limit(1)
-        .get();
-    if (reverse.docs.isNotEmpty) return;
-
-    await _firestore.collection(AppConstants.friendsCollection).add({
+    final db = await _db.database;
+    final existing = await db.query(
+      'friends',
+      where: '(fromUserId = ? AND toUserId = ?) OR (fromUserId = ? AND toUserId = ?)',
+      whereArgs: [fromUserId, toUserId, toUserId, fromUserId],
+      limit: 1,
+    );
+    if (existing.isNotEmpty) return;
+    await db.insert('friends', {
+      'id': _uuid.v4(),
       'fromUserId': fromUserId,
       'toUserId': toUserId,
       'status': 'pending',
-      'createdAt': Timestamp.now(),
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
     });
+    _db.notify('friends');
   }
-  
+
   Future<void> acceptFriendRequest(String friendshipId) async {
-    await _firestore
-        .collection(AppConstants.friendsCollection)
-        .doc(friendshipId)
-        .update({'status': 'accepted'});
+    final db = await _db.database;
+    await db.update(
+      'friends',
+      {'status': 'accepted'},
+      where: 'id = ?',
+      whereArgs: [friendshipId],
+    );
+    _db.notify('friends');
   }
-  
+
   Future<void> rejectFriendRequest(String friendshipId) async {
-    await _firestore
-        .collection(AppConstants.friendsCollection)
-        .doc(friendshipId)
-        .delete();
+    final db = await _db.database;
+    await db.delete('friends', where: 'id = ?', whereArgs: [friendshipId]);
+    _db.notify('friends');
   }
 
   Future<void> cancelFriendRequest(String friendshipId) =>
       rejectFriendRequest(friendshipId);
-  
-  Stream<List<String>> getUserFriends(String userId) {
-    // Firestore doesn't support OR queries directly, so we stream accepted
-    // friendships that involve this user by filtering in memory.
-    return _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('status', isEqualTo: 'accepted')
-        .snapshots()
-        .map((snapshot) {
-      final friendIds = <String>[];
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        if (data['fromUserId'] == userId) {
-          friendIds.add(data['toUserId'] as String);
-        } else if (data['toUserId'] == userId) {
-          friendIds.add(data['fromUserId'] as String);
-        }
-      }
-      return friendIds;
-    });
+
+  Stream<List<String>> getUserFriends(String userId) async* {
+    await for (final _ in _db.watchTable('friends')) {
+      yield await _queryFriendIds(userId);
+    }
   }
 
-  /// Returns the UIDs of all users with whom [userId] has a relationship
-  /// (pending in either direction, or accepted).
+  Future<List<String>> _queryFriendIds(String userId) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      'friends',
+      where:
+          'status = ? AND (fromUserId = ? OR toUserId = ?)',
+      whereArgs: ['accepted', userId, userId],
+    );
+    return rows.map((r) {
+      return r['fromUserId'] == userId
+          ? r['toUserId'] as String
+          : r['fromUserId'] as String;
+    }).toList();
+  }
+
   Future<Set<String>> getRelatedUserIds(String userId) async {
-    final sent = await _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('fromUserId', isEqualTo: userId)
-        .get();
-    final received = await _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('toUserId', isEqualTo: userId)
-        .get();
+    final db = await _db.database;
+    final rows = await db.query(
+      'friends',
+      where: 'fromUserId = ? OR toUserId = ?',
+      whereArgs: [userId, userId],
+    );
     final ids = <String>{};
-    for (final doc in sent.docs) {
-      ids.add(doc.data()['toUserId'] as String);
-    }
-    for (final doc in received.docs) {
-      ids.add(doc.data()['fromUserId'] as String);
+    for (final r in rows) {
+      if (r['fromUserId'] == userId) {
+        ids.add(r['toUserId'] as String);
+      } else {
+        ids.add(r['fromUserId'] as String);
+      }
     }
     return ids;
   }
 
-  /// Returns the UIDs of users to whom [userId] has sent a pending request.
   Future<Set<String>> getPendingOutgoingIds(String userId) async {
-    final snapshot = await _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('fromUserId', isEqualTo: userId)
-        .where('status', isEqualTo: 'pending')
-        .get();
-    return snapshot.docs
-        .map((doc) => doc.data()['toUserId'] as String)
-        .toSet();
+    final db = await _db.database;
+    final rows = await db.query(
+      'friends',
+      where: 'fromUserId = ? AND status = ?',
+      whereArgs: [userId, 'pending'],
+    );
+    return rows.map((r) => r['toUserId'] as String).toSet();
   }
 
-  // Incoming friend requests for a user
-  Stream<List<Map<String, dynamic>>> getIncomingFriendRequests(String userId) {
-    return _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('toUserId', isEqualTo: userId)
-        .where('status', isEqualTo: 'pending')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              return {'id': doc.id, ...doc.data()};
-            }).toList());
+  Stream<List<Map<String, dynamic>>> getIncomingFriendRequests(
+      String userId) async* {
+    await for (final _ in _db.watchTable('friends')) {
+      final db = await _db.database;
+      final rows = await db.query(
+        'friends',
+        where: 'toUserId = ? AND status = ?',
+        whereArgs: [userId, 'pending'],
+      );
+      yield rows.map((r) => Map<String, dynamic>.from(r)).toList();
+    }
   }
 
-  // Outgoing friend requests sent by a user
-  Stream<List<Map<String, dynamic>>> getOutgoingFriendRequests(String userId) {
-    return _firestore
-        .collection(AppConstants.friendsCollection)
-        .where('fromUserId', isEqualTo: userId)
-        .where('status', isEqualTo: 'pending')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              return {'id': doc.id, ...doc.data()};
-            }).toList());
+  Stream<List<Map<String, dynamic>>> getOutgoingFriendRequests(
+      String userId) async* {
+    await for (final _ in _db.watchTable('friends')) {
+      final db = await _db.database;
+      final rows = await db.query(
+        'friends',
+        where: 'fromUserId = ? AND status = ?',
+        whereArgs: [userId, 'pending'],
+      );
+      yield rows.map((r) => Map<String, dynamic>.from(r)).toList();
+    }
   }
-  
-  // Search users
+
+  // ── User search ────────────────────────────────────────────────────────────
+
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
-    final snapshot = await _firestore
-        .collection(AppConstants.usersCollection)
-        .where('displayName', isGreaterThanOrEqualTo: query)
-        .where('displayName', isLessThanOrEqualTo: '$query\uf8ff')
-        .limit(20)
-        .get();
-    
-    return snapshot.docs.map((doc) {
-      return {
-        'uid': doc.id,
-        ...doc.data(),
-      };
+    final db = await _db.database;
+    final rows = await db.query(
+      'users',
+      where: 'displayName LIKE ?',
+      whereArgs: ['$query%'],
+      limit: 20,
+    );
+    // Expose the primary key as both 'id' and 'uid' for callers that use either.
+    return rows.map((r) {
+      final m = Map<String, dynamic>.from(r);
+      m['uid'] = m['id'];
+      return m;
     }).toList();
   }
 
-  // Messaging
-  Future<void> sendMessage(String chatId, String senderId, String content) async {
-    final message = Message(
-      chatId: chatId,
-      senderId: senderId,
-      content: content,
-      timestamp: DateTime.now(),
+  // ── Messaging ──────────────────────────────────────────────────────────────
+
+  Future<void> sendMessage(
+      String chatId, String senderId, String content) async {
+    final db = await _db.database;
+    final now = DateTime.now();
+    await db.insert('messages', {
+      'id': _uuid.v4(),
+      'chatId': chatId,
+      'senderId': senderId,
+      'content': content,
+      'timestamp': now.millisecondsSinceEpoch,
+      'isRead': 0,
+    });
+    await db.update(
+      'chat_rooms',
+      {
+        'lastMessage': content,
+        'lastMessageTime': now.millisecondsSinceEpoch,
+        'lastMessageSenderId': senderId,
+      },
+      where: 'id = ?',
+      whereArgs: [chatId],
     );
-
-    final batch = _firestore.batch();
-
-    // Add message
-    final messageRef = _firestore
-        .collection(AppConstants.messagesCollection)
-        .doc(chatId)
-        .collection('messages')
-        .doc();
-    batch.set(messageRef, message.toFirestore());
-
-    // Update chat room metadata
-    final chatRef = _firestore
-        .collection(AppConstants.messagesCollection)
-        .doc(chatId);
-    batch.set(chatRef, {
-      'lastMessage': content,
-      'lastMessageTime': Timestamp.fromDate(message.timestamp),
-      'lastMessageSenderId': senderId,
-    }, SetOptions(merge: true));
-
-    await batch.commit();
+    _db.notify('messages');
+    _db.notify('chat_rooms');
   }
 
-  Stream<List<Message>> getChatMessages(String chatId, {int limit = 50}) {
-    return _firestore
-        .collection(AppConstants.messagesCollection)
-        .doc(chatId)
-        .collection('messages')
-        .orderBy('timestamp', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Message.fromFirestore(doc)).toList());
+  Stream<List<Message>> getChatMessages(String chatId,
+      {int limit = 50}) async* {
+    await for (final _ in _db.watchTable('messages')) {
+      final db = await _db.database;
+      final rows = await db.query(
+        'messages',
+        where: 'chatId = ?',
+        whereArgs: [chatId],
+        orderBy: 'timestamp DESC',
+        limit: limit,
+      );
+      yield rows.map(Message.fromMap).toList();
+    }
   }
 
   Future<void> getOrCreateChatRoom(
       String chatId, List<String> participants) async {
-    final chatRef = _firestore
-        .collection(AppConstants.messagesCollection)
-        .doc(chatId);
-
-    final doc = await chatRef.get();
-    if (!doc.exists) {
-      await chatRef.set({
-        'participants': participants,
+    final db = await _db.database;
+    final rows = await db.query(
+      'chat_rooms',
+      where: 'id = ?',
+      whereArgs: [chatId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      await db.insert('chat_rooms', {
+        'id': chatId,
+        'participants': DatabaseService.encodeList(participants),
         'lastMessage': null,
         'lastMessageTime': null,
         'lastMessageSenderId': null,
       });
+      _db.notify('chat_rooms');
     }
   }
 
-  Stream<List<ChatRoom>> getUserChatRooms(String userId) {
-    return _firestore
-        .collection(AppConstants.messagesCollection)
-        .where('participants', arrayContains: userId)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => ChatRoom.fromFirestore(doc)).toList());
+  Stream<List<ChatRoom>> getUserChatRooms(String userId) async* {
+    await for (final _ in _db.watchTable('chat_rooms')) {
+      yield await _queryUserChatRooms(userId);
+    }
+  }
+
+  Future<List<ChatRoom>> _queryUserChatRooms(String userId) async {
+    final db = await _db.database;
+    final rows = await db.query('chat_rooms');
+    return rows
+        .map(ChatRoom.fromMap)
+        .where((room) => room.participants.contains(userId))
+        .toList();
   }
 
   Future<void> markMessagesAsRead(String chatId, String userId) async {
-    final messages = await _firestore
-        .collection(AppConstants.messagesCollection)
-        .doc(chatId)
-        .collection('messages')
-        .where('isRead', isEqualTo: false)
-        .where('senderId', isNotEqualTo: userId)
-        .get();
-
-    final batch = _firestore.batch();
-    for (final doc in messages.docs) {
-      batch.update(doc.reference, {'isRead': true});
-    }
-    await batch.commit();
+    final db = await _db.database;
+    await db.update(
+      'messages',
+      {'isRead': 1},
+      where: 'chatId = ? AND senderId != ? AND isRead = 0',
+      whereArgs: [chatId, userId],
+    );
+    _db.notify('messages');
   }
 }
 

@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/social_service.dart';
+import '../services/user_service.dart';
 import '../models/post_model.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
-import '../core/constants.dart';
 
 final socialServiceProvider = Provider<SocialService>((ref) => SocialService());
+final _userServiceProvider = Provider<UserService>((ref) => UserService());
 
 final feedProvider = StreamProvider<List<PostModel>>((ref) {
   final socialService = ref.watch(socialServiceProvider);
@@ -60,11 +60,9 @@ final chatMessagesProvider =
 // Provider to fetch a user's data by ID (for friend request tiles, etc.)
 final userByIdProvider =
     FutureProvider.family<Map<String, dynamic>?, String>((ref, userId) async {
-  final doc = await FirebaseFirestore.instance
-      .collection(AppConstants.usersCollection)
-      .doc(userId)
-      .get();
-  if (!doc.exists) return null;
-  return {'uid': doc.id, ...doc.data()!};
+  final userService = ref.watch(_userServiceProvider);
+  final user = await userService.getUserById(userId);
+  if (user == null) return null;
+  return {'uid': user.uid, ...user.toMap()};
 });
 

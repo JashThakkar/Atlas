@@ -1,13 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class BodyMetricModel {
   final String? id;
   final String userId;
-  final String metricType; // Weight, Chest, Waist, etc.
+  final String metricType;
   final double value;
-  final String unit; // kg, cm, lbs, inches
+  final String unit;
   final DateTime date;
-  
+
   BodyMetricModel({
     this.id,
     required this.userId,
@@ -16,26 +14,27 @@ class BodyMetricModel {
     required this.unit,
     required this.date,
   });
-  
-  factory BodyMetricModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+
+  factory BodyMetricModel.fromMap(Map<String, dynamic> map) {
     return BodyMetricModel(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      metricType: data['metricType'] ?? '',
-      value: (data['value'] ?? 0).toDouble(),
-      unit: data['unit'] ?? 'kg',
-      date: (data['date'] as Timestamp).toDate(),
+      id: map['id'] as String?,
+      userId: map['userId'] as String? ?? '',
+      metricType: map['metricType'] as String? ?? '',
+      value: (map['value'] as num? ?? 0).toDouble(),
+      unit: map['unit'] as String? ?? 'kg',
+      date: DateTime.fromMillisecondsSinceEpoch(
+          map['date'] as int? ?? DateTime.now().millisecondsSinceEpoch),
     );
   }
-  
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'userId': userId,
       'metricType': metricType,
       'value': value,
       'unit': unit,
-      'date': Timestamp.fromDate(date),
+      'date': date.millisecondsSinceEpoch,
     };
   }
 }

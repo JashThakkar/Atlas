@@ -1,24 +1,29 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '../models/bug_report_model.dart';
-import '../core/constants.dart';
+import 'database_service.dart';
 
 class BugReportService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+  final DatabaseService _db = DatabaseService();
+  final _uuid = const Uuid();
+
   Future<void> submitBugReport(BugReportModel report) async {
-    await _firestore
-        .collection(AppConstants.bugReportsCollection)
-        .add(report.toFirestore());
+    final db = await _db.database;
+    final map = report.toMap();
+    map['id'] ??= _uuid.v4();
+    await db.insert('bug_reports', map);
+    _db.notify('bug_reports');
   }
-  
-  Stream<List<BugReportModel>> getUserBugReports(String userId) {
-    return _firestore
-        .collection(AppConstants.bugReportsCollection)
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => BugReportModel.fromFirestore(doc))
-            .toList());
+
+  Stream<List<BugReportModel>> getUserBugReports(String userId) async* {
+    await for (final _ in _db.watchTable('bug_reports')) {
+      final db = await _db.database;
+      final rows = await db.query(
+        'bug_reports',
+        where: 'userId = ?',
+        whereArgs: [userId],
+        orderBy: 'createdAt DESC',
+      );
+      yield rows.map(BugReportModel.fromMap).toList();
+    }
   }
 }
