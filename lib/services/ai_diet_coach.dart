@@ -1,9 +1,10 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AIDietCoach {
   static const prefsKey = 'gemini_api_key';
+  static const _secureStorage = FlutterSecureStorage();
 
   static const _systemPrompt =
       'You are Atlas AI Diet Coach, a supportive and knowledgeable nutritional advisor. '
@@ -17,13 +18,12 @@ class AIDietCoach {
       'rather than restrictive diets.';
 
   /// Returns the effective API key.
-  /// Priority: SharedPreferences (user-entered via Settings) → .env file.
+  /// Priority: SecureStorage (user-entered via Settings) → .env file.
   /// Returns empty string if neither source has a valid key.
   Future<String> getApiKey() async {
-    // 1. User-entered key from SharedPreferences
+    // 1. User-entered key from SecureStorage
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString(prefsKey) ?? '';
+      final saved = await _secureStorage.read(key: prefsKey) ?? '';
       if (saved.isNotEmpty && !_isPlaceholder(saved)) return saved;
     } catch (_) {}
 
@@ -36,10 +36,9 @@ class AIDietCoach {
     return '';
   }
 
-  /// Saves [key] to SharedPreferences so it is used on future calls.
+  /// Saves [key] to SecureStorage so it is used on future calls.
   Future<void> saveApiKey(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(prefsKey, key.trim());
+    await _secureStorage.write(key: prefsKey, value: key.trim());
   }
 
   /// Returns true if the key looks like an unedited placeholder.
