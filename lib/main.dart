@@ -16,6 +16,10 @@ void main() async {
   // Run the app in a guarded zone to catch all errors
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Enable edge-to-edge mode so the app draws behind the system bars,
+    // preventing the Android navigation bar from overlapping content.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     
     // Set up global error handling
     _setupErrorHandling();
