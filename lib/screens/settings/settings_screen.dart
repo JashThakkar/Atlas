@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/notification_provider.dart';
 import '../../services/notification_service.dart';
@@ -18,6 +19,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _apiKeyController = TextEditingController();
   bool _apiKeyObscured = true;
   bool _apiKeySaving = false;
+  final _secureStorage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -33,7 +35,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedKey = prefs.getString(AIDietCoach.prefsKey) ?? '';
+    final savedKey = await _secureStorage.read(key: AIDietCoach.prefsKey) ?? '';
     setState(() {
       _dailyTipEnabled = prefs.getBool('dailyTipEnabled') ?? true;
       _workoutReminderEnabled = prefs.getBool('workoutReminderEnabled') ?? true;
