@@ -53,24 +53,6 @@ class HomeScreen extends ConsumerWidget {
                             icon: const Icon(Icons.refresh),
                             label: const Text('Try Again'),
                           ),
-                          const SizedBox(height: 16),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              final authService = ref.read(authServiceProvider);
-                              final result = await authService.testFirestoreManually();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Test Result: $result'),
-                                    duration: const Duration(seconds: 5),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.bug_report),
-                            label: const Text('Run Diagnostics'),
-                          ),
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
                             onPressed: () {
