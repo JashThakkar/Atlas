@@ -40,8 +40,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
     // Gracefully handle any route GoRouter cannot match (e.g. after a deep
-    // link with an unrecognised path).
-    errorBuilder: (context, state) => const HomeScreen(),
+    // link with an unrecognised path).  We use a redirect widget rather than
+    // rendering HomeScreen inline so that GoRouter's location actually changes
+    // to /home (back-button and state management stay correct).
+    errorBuilder: (context, state) => const _RouterErrorRedirect(),
     redirect: (context, state) {
       // The Spotify OAuth callback arrives as a custom-scheme deep link
       // (atlasfit://spotify-callback/?code=…).  It is handled by the
@@ -240,3 +242,32 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// Shown by [GoRouter.errorBuilder] when no route matches a location.
+/// Immediately navigates to [/home] via [GoRouter.go] so that GoRouter's
+/// internal location is properly updated (back-button, state and history
+/// all remain correct — unlike rendering HomeScreen inline).
+class _RouterErrorRedirect extends StatefulWidget {
+  const _RouterErrorRedirect();
+
+  @override
+  State<_RouterErrorRedirect> createState() => _RouterErrorRedirectState();
+}
+
+class _RouterErrorRedirectState extends State<_RouterErrorRedirect> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go('/home');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Shown for a single frame while the post-frame callback fires.
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}

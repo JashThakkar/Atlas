@@ -59,17 +59,47 @@ class _MusicPlayerWidgetState extends State<MusicPlayerWidget> {
 
     if (state == MusicPlaybackState.error) {
       return Card(
-        color: Theme.of(context).colorScheme.errorContainer,
-        child: ListTile(
-          leading: const Icon(Icons.error_outline),
-          title: const Text('Music service unavailable'),
-          trailing: IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              try {
-                await _service.connect();
-              } catch (_) {}
-            },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.music_off, size: 36, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Music unavailable',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Could not reach the music service.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.refresh, size: 14),
+                label: const Text('Retry'),
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+                onPressed: () async {
+                  try {
+                    await _service.connect();
+                  } catch (_) {}
+                },
+              ),
+            ],
           ),
         ),
       );

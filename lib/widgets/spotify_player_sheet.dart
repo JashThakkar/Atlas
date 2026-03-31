@@ -64,46 +64,16 @@ class SpotifyPlayerSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Error banner
-          if (spotify.error != null) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: colorScheme.onErrorContainer, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      spotify.error!,
-                      style: TextStyle(
-                          color: colorScheme.onErrorContainer, fontSize: 12),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 16),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    color: colorScheme.onErrorContainer,
-                    onPressed: () {
-                      // Clear error by refreshing state
-                      ref.read(spotifyServiceProvider).fetchCurrentlyPlaying();
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
           // Not connected → show connect UI
           if (!spotify.isConnected) ...[
             _NotConnectedBody(spotify: spotify),
+          ] else if (spotify.error != null) ...[
+            // API or network failure while connected → friendly placeholder
+            // with a retry button instead of a jarring red error banner.
+            _SpotifyErrorPlaceholder(
+              onRetry: () =>
+                  ref.read(spotifyServiceProvider).fetchCurrentlyPlaying(),
+            ),
           ] else ...[
             // Album art
             _AlbumArt(url: spotify.albumArtUrl),
@@ -258,6 +228,57 @@ class _NotConnectedBody extends StatelessWidget {
               label: Text(spotify.isLoading ? 'Connecting…' : 'Connect with Spotify'),
             ),
           ),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+}
+
+/// Shown when Spotify is connected but an API or network error has occurred.
+/// Replaces the old red error banner with a friendly music-note placeholder
+/// and a retry button.
+class _SpotifyErrorPlaceholder extends StatelessWidget {
+  const _SpotifyErrorPlaceholder({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 24),
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.music_off, size: 56, color: Colors.grey[700]),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Music unavailable',
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Could not reach Spotify right now.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        OutlinedButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh, size: 16),
+          label: const Text('Try again'),
+        ),
         const SizedBox(height: 32),
       ],
     );
