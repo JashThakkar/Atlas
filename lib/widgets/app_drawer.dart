@@ -133,6 +133,22 @@ class AppDrawer extends ConsumerWidget {
                   context.push('/challenges');
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.group),
+                title: const Text('Private Circles'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/circles');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.timer),
+                title: const Text('Quick Workout'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/quick-workout');
+                },
+              ),
               if (user?.isAdmin == true) ...[
                 const Divider(),
                 ListTile(

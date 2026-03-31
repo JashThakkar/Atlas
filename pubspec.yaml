@@ -76,6 +76,11 @@ dependencies:
   timeago: ^3.7.0
   timezone: ^0.9.4
 
+  # Spotify / Music integration
+  url_launcher: ^6.3.1
+  app_links: ^6.4.0
+  crypto: ^3.0.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
