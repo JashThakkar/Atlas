@@ -7,6 +7,8 @@ class CircleService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Generates a unique 6-character alphanumeric invite code.
+  /// Characters that look similar (I, O, 0, 1) are excluded to prevent
+  /// user confusion when typing or reading the code aloud.
   String _generateInviteCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     final rng = Random.secure();

@@ -146,9 +146,9 @@ class _TimeConstrainedWorkoutScreenState
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text('$_kMinMinutes min', style: TextStyle(fontSize: 12)),
-                Text('$_kMaxMinutes min', style: TextStyle(fontSize: 12)),
+              children: [
+                Text('$_kMinMinutes min', style: const TextStyle(fontSize: 12)),
+                Text('$_kMaxMinutes min', style: const TextStyle(fontSize: 12)),
               ],
             ),
             const SizedBox(height: 24),

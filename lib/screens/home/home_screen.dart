@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import '../../models/workout_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fitness_provider.dart';
+import '../../providers/music_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/spotify_player_sheet.dart';
 import '../../services/auth_service.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -99,6 +101,7 @@ class HomeScreen extends ConsumerWidget {
         
         final statsAsync = ref.watch(userStatsProvider(user.uid));
         final workoutsAsync = ref.watch(userWorkoutsProvider(user.uid));
+        final spotify = ref.watch(spotifyServiceProvider);
         
         return Scaffold(
           appBar: AppBar(
@@ -116,6 +119,19 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           drawer: const AppDrawer(),
+          // ── Spotify floating music button ────────────────────────────────
+          floatingActionButton: FloatingActionButton(
+            heroTag: 'spotify_fab',
+            backgroundColor: spotify.isPlaying
+                ? const Color(0xFF1DB954) // Spotify green when playing
+                : null,
+            foregroundColor: spotify.isPlaying ? Colors.white : null,
+            onPressed: () => showSpotifyPlayerSheet(context),
+            tooltip: 'Music Player',
+            child: spotify.isPlaying
+                ? const Icon(Icons.music_note)
+                : const Icon(Icons.music_note_outlined),
+          ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(

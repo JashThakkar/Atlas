@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:app_links/app_links.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'firebase_options.dart';
 import 'core/theme.dart';
 import 'core/router.dart';
+import 'providers/music_provider.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -120,11 +122,47 @@ void _logError(String type, Object error, StackTrace? stackTrace) {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  StreamSubscription<Uri>? _deepLinkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Spotify (restores session from secure storage if available).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(spotifyServiceProvider).initialize();
+    });
+    _setupDeepLinkListener();
+  }
+
+  void _setupDeepLinkListener() {
+    final appLinks = AppLinks();
+    _deepLinkSub = appLinks.uriLinkStream.listen(
+      (uri) {
+        debugPrint('🔗 Deep link received: $uri');
+        if (uri.scheme == 'atlasfit' && uri.host == 'spotify-callback') {
+          ref.read(spotifyServiceProvider).handleRedirectCallback(uri);
+        }
+      },
+      onError: (e) => debugPrint('Deep link error: $e'),
+    );
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     debugPrint('🏗️ Building MyApp widget...');
     
     try {
@@ -139,7 +177,6 @@ class MyApp extends ConsumerWidget {
         themeMode: ThemeMode.system,
         routerConfig: router,
         builder: (context, child) {
-          // Add error boundary and loading handling
           return _AppErrorBoundary(
             child: child ?? const _LoadingScreen(),
           );
@@ -149,7 +186,6 @@ class MyApp extends ConsumerWidget {
       debugPrint('❌ Error building MyApp: $e');
       _logError('App Build Error', e, stackTrace);
       
-      // Return a basic error screen if app build fails
       return MaterialApp(
         home: _ErrorScreen(error: e.toString()),
       );
