@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
@@ -38,7 +39,19 @@ final routerProvider = Provider<GoRouter>((ref) {
   
   return GoRouter(
     initialLocation: '/login',
+    // Gracefully handle any route GoRouter cannot match (e.g. after a deep
+    // link with an unrecognised path).
+    errorBuilder: (context, state) => const HomeScreen(),
     redirect: (context, state) {
+      // The Spotify OAuth callback arrives as a custom-scheme deep link
+      // (atlasfit://spotify-callback/?code=…).  It is handled by the
+      // app_links listener in main.dart; GoRouter must not try to match it
+      // as an HTTP path or it will throw GoException.
+      if (state.uri.scheme == 'atlasfit' &&
+          state.uri.host == 'spotify-callback') {
+        return '/home';
+      }
+
       // Handle loading state
       if (authState.isLoading) {
         return null; // Don't redirect while loading
