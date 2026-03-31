@@ -18,6 +18,7 @@ class AppConstants {
   static const String chatHistoryCollection = 'chat_history';
   static const String messagesCollection = 'messages';
   static const String userStatsCollection = 'user_stats';
+  static const String circlesCollection = 'circles';
   
   // Streak Settings
   static const int streakGracePeriodHours = 24;

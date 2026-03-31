@@ -9,6 +9,7 @@ import '../screens/profile/edit_profile_screen.dart';
 import '../screens/workouts/workouts_screen.dart';
 import '../screens/workouts/workout_detail_screen.dart';
 import '../screens/workouts/generate_workout_screen.dart';
+import '../screens/workouts/time_constrained_workout_screen.dart';
 import '../screens/exercises/exercise_logger_screen.dart';
 import '../screens/exercises/exercise_history_screen.dart';
 import '../screens/body_metrics/body_metrics_screen.dart';
@@ -22,6 +23,9 @@ import '../screens/social/friend_requests_screen.dart';
 import '../screens/social/messages_screen.dart';
 import '../screens/social/chat_screen.dart';
 import '../screens/challenges/challenges_screen.dart';
+import '../screens/circles/circles_screen.dart';
+import '../screens/circles/join_or_create_circle_screen.dart';
+import '../screens/circles/circle_detail_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/create_challenge_screen.dart';
 import '../screens/admin/manage_challenges_screen.dart';
@@ -89,6 +93,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/generate-workout',
         builder: (context, state) => const GenerateWorkoutScreen(),
+      ),
+      GoRoute(
+        path: '/quick-workout',
+        builder: (context, state) => const TimeConstrainedWorkoutScreen(),
       ),
       GoRoute(
         path: '/exercise-logger',
@@ -159,6 +167,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/challenges',
         builder: (context, state) => const ChallengesScreen(),
+      ),
+      GoRoute(
+        path: '/circles',
+        builder: (context, state) => const CirclesScreen(),
+      ),
+      GoRoute(
+        path: '/circles/join-or-create',
+        builder: (context, state) => const JoinOrCreateCircleScreen(),
+      ),
+      GoRoute(
+        path: '/circles/:circleId',
+        builder: (context, state) {
+          final circleId = state.pathParameters['circleId']!;
+          return CircleDetailScreen(circleId: circleId);
+        },
       ),
       GoRoute(
         path: '/admin',

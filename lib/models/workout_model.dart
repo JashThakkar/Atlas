@@ -42,6 +42,11 @@ class WorkoutModel {
   final DateTime? completedAt;
   final int? intensityRating; // 1-5 rating user provides after workout
   final DateTime createdAt;
+  // Time-constraint adjustment fields (Requirement 18)
+  final int? adjustedForMinutes;
+  final int? estimatedMinutes;
+  final bool isAiAdjusted;
+  final bool allowUserOverride;
   
   WorkoutModel({
     this.id,
@@ -53,6 +58,10 @@ class WorkoutModel {
     this.completedAt,
     this.intensityRating,
     required this.createdAt,
+    this.adjustedForMinutes,
+    this.estimatedMinutes,
+    this.isAiAdjusted = false,
+    this.allowUserOverride = true,
   });
   
   factory WorkoutModel.fromFirestore(DocumentSnapshot doc) {
@@ -72,6 +81,10 @@ class WorkoutModel {
           : null,
       intensityRating: data['intensityRating'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
+      adjustedForMinutes: data['adjustedForMinutes'],
+      estimatedMinutes: data['estimatedMinutes'],
+      isAiAdjusted: data['isAiAdjusted'] ?? false,
+      allowUserOverride: data['allowUserOverride'] ?? true,
     );
   }
   
@@ -85,8 +98,40 @@ class WorkoutModel {
       'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
       'intensityRating': intensityRating,
       'createdAt': Timestamp.fromDate(createdAt),
+      'adjustedForMinutes': adjustedForMinutes,
+      'estimatedMinutes': estimatedMinutes,
+      'isAiAdjusted': isAiAdjusted,
+      'allowUserOverride': allowUserOverride,
     };
   }
   
   bool get isCompleted => completedAt != null;
+
+  WorkoutModel copyWith({
+    String? workoutName,
+    List<WorkoutExercise>? exercises,
+    int? durationMinutes,
+    DateTime? completedAt,
+    int? intensityRating,
+    int? adjustedForMinutes,
+    int? estimatedMinutes,
+    bool? isAiAdjusted,
+    bool? allowUserOverride,
+  }) {
+    return WorkoutModel(
+      id: id,
+      userId: userId,
+      workoutName: workoutName ?? this.workoutName,
+      difficulty: difficulty,
+      exercises: exercises ?? this.exercises,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      completedAt: completedAt ?? this.completedAt,
+      intensityRating: intensityRating ?? this.intensityRating,
+      createdAt: createdAt,
+      adjustedForMinutes: adjustedForMinutes ?? this.adjustedForMinutes,
+      estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
+      isAiAdjusted: isAiAdjusted ?? this.isAiAdjusted,
+      allowUserOverride: allowUserOverride ?? this.allowUserOverride,
+    );
+  }
 }

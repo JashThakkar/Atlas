@@ -302,6 +302,16 @@ class HomeScreen extends ConsumerWidget {
                       label: 'Challenges',
                       onPressed: () => context.push('/challenges'),
                     ),
+                    _ActionButton(
+                      icon: Icons.timer,
+                      label: 'Quick Workout',
+                      onPressed: () => context.push('/quick-workout'),
+                    ),
+                    _ActionButton(
+                      icon: Icons.group,
+                      label: 'Circles',
+                      onPressed: () => context.push('/circles'),
+                    ),
                   ],
                 ),
               ],

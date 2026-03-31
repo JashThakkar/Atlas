@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fitness_provider.dart';
 import '../../models/exercise_log_model.dart';
+import '../../services/music_service.dart';
+import '../../widgets/music_player_widget.dart';
 
 class ExerciseLoggerScreen extends ConsumerStatefulWidget {
   const ExerciseLoggerScreen({super.key});
@@ -16,6 +18,8 @@ class _ExerciseLoggerScreenState extends ConsumerState<ExerciseLoggerScreen> {
   final _exerciseNameController = TextEditingController();
   final _notesController = TextEditingController();
   final List<ExerciseSet> _sets = [];
+  final MusicService _musicService = MusicService();
+  bool _showMusicPlayer = false;
   
   void _addSet() {
     setState(() {
@@ -86,6 +90,17 @@ class _ExerciseLoggerScreenState extends ConsumerState<ExerciseLoggerScreen> {
         title: const Text('Log Exercise'),
         actions: [
           IconButton(
+            icon: Icon(
+              _showMusicPlayer ? Icons.music_note : Icons.music_note_outlined,
+              color: _showMusicPlayer
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: 'Music',
+            onPressed: () =>
+                setState(() => _showMusicPlayer = !_showMusicPlayer),
+          ),
+          IconButton(
             icon: const Icon(Icons.save),
             onPressed: _saveExercise,
           ),
@@ -98,6 +113,11 @@ class _ExerciseLoggerScreenState extends ConsumerState<ExerciseLoggerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Music player panel
+              if (_showMusicPlayer) ...[
+                MusicPlayerWidget(musicService: _musicService),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _exerciseNameController,
                 decoration: const InputDecoration(
