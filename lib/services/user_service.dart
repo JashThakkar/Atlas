@@ -21,6 +21,11 @@ class UserService {
     String userId,
     Map<String, dynamic> userData,
   ) async {
+    if (userData.containsKey('displayName') &&
+        userData['displayName'] is String) {
+      userData['displayNameLower'] =
+          (userData['displayName'] as String).toLowerCase();
+    }
     await _firestore
         .collection(AppConstants.usersCollection)
         .doc(userId)

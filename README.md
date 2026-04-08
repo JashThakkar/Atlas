@@ -83,3 +83,59 @@ The AI Diet Coach chat will work immediately — no restart needed.
 ## Full Developer Docs
 
 See [ATLAS_README.md](ATLAS_README.md) for the complete setup guide (Flutter, Firebase, environment variables, project structure, and more).
+
+---
+
+## Developer Setup Notes
+
+### Firebase — `circles` Collection & Indexes
+
+The **Circles** feature uses a Firestore collection named `circles`. You need to:
+
+1. **Create the collection** — it is created automatically the first time a user creates a Circle inside the app. No manual step is required in the Firebase Console for the collection itself.
+
+2. **Deploy the Firestore index** — the app queries circles by membership and sorts them by creation time, which requires a composite index. Deploy it with the Firebase CLI:
+
+   ```bash
+   firebase deploy --only firestore:indexes
+   ```
+
+   This reads `firestore.indexes.json` (already in the repo) and creates the required index:
+
+   | Collection | Fields |
+   |---|---|
+   | `circles` | `memberIds` (array-contains) + `createdAt` (descending) |
+
+   > **Without this index the Circles screen will show an error and a link to create the index in the Firebase Console.** You can also click that link to create it directly without the CLI.
+
+3. **Firestore Security Rules** — ensure your `firestore.rules` allows authenticated users to read/write their own circles. The rules already in the repo cover this.
+
+---
+
+### Spotify Integration — `.env` and GitHub Secret
+
+The in-app music player uses the Spotify Web API. To enable it:
+
+#### Local development
+
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and sign in.
+2. Click **Create app**, fill in a name, and set the Redirect URI to:
+   ```
+   atlasfit://spotify-callback
+   ```
+3. Copy the **Client ID** shown on the app's overview page.
+4. Open (or create) the `.env` file in the project root and add:
+   ```env
+   SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+   ```
+
+#### GitHub Actions (CI builds)
+
+The build workflow reads `SPOTIFY_CLIENT_ID` from a GitHub secret so the APK produced by CI also includes Spotify support.
+
+1. In your GitHub repository go to **Settings → Secrets and variables → Actions**.
+2. Click **New repository secret**.
+3. Set **Name** to `SPOTIFY_CLIENT_ID` and **Secret** to your Client ID from the Spotify Dashboard.
+4. Click **Add secret**.
+
+> **Note:** Playback control (play/pause/skip) requires a Spotify Premium account. All account types can view the currently-playing track.
