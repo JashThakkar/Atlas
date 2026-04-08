@@ -209,6 +209,9 @@ class SocialService {
   // Search users
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     final lowerQuery = query.toLowerCase();
+    // '\uf8ff' is the highest code point in Unicode's private use area and acts
+    // as an "end of range" sentinel for Firestore prefix queries, matching all
+    // strings that start with lowerQuery.
     final snapshot = await _firestore
         .collection(AppConstants.usersCollection)
         .where('displayNameLower', isGreaterThanOrEqualTo: lowerQuery)
