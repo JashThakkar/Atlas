@@ -1,14 +1,17 @@
 name: Build iOS IPA
 
+# Commented out — re-enable when iOS build is ready
+# on:
+#   push:
+#     branches:
+#       - main
+#       - master
+#   pull_request:
+#     branches:
+#       - main
+#       - master
+#   workflow_dispatch:
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:
