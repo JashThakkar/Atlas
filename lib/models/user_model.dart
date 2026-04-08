@@ -52,6 +52,7 @@ class UserModel {
     return {
       'email': email,
       'displayName': displayName,
+      'displayNameLower': displayName.toLowerCase(),
       'photoUrl': photoUrl,
       'bio': bio,
       'currentStreak': currentStreak,

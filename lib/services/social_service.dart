@@ -208,10 +208,11 @@ class SocialService {
   
   // Search users
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
+    final lowerQuery = query.toLowerCase();
     final snapshot = await _firestore
         .collection(AppConstants.usersCollection)
-        .where('displayName', isGreaterThanOrEqualTo: query)
-        .where('displayName', isLessThanOrEqualTo: '$query\uf8ff')
+        .where('displayNameLower', isGreaterThanOrEqualTo: lowerQuery)
+        .where('displayNameLower', isLessThanOrEqualTo: '$lowerQuery\uf8ff')
         .limit(20)
         .get();
     

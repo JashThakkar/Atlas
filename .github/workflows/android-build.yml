@@ -41,6 +41,7 @@ jobs:
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           EXERCISE_API_KEY=${{ secrets.EXERCISE_API_KEY }}
           EXERCISE_API_BASE_URL=https://api.api-ninjas.com/v1
+          SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}
           EOF
 
       - name: Install dependencies

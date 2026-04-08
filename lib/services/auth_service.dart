@@ -468,7 +468,10 @@ class AuthService {
     String? bio,
   }) async {
     final updates = <String, dynamic>{};
-    if (displayName != null) updates['displayName'] = displayName;
+    if (displayName != null) {
+      updates['displayName'] = displayName;
+      updates['displayNameLower'] = displayName.toLowerCase();
+    }
     if (photoUrl != null) updates['photoUrl'] = photoUrl;
     if (bio != null) updates['bio'] = bio;
     
