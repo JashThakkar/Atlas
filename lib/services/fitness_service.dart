@@ -4,9 +4,11 @@ import '../models/exercise_log_model.dart';
 import '../models/body_metric_model.dart';
 import '../models/workout_model.dart';
 import '../core/constants.dart';
+import 'circle_service.dart';
 
 class FitnessService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final CircleService _circleService = CircleService();
   
   // Exercise Logs
   Future<void> addExerciseLog(ExerciseLogModel log) async {
@@ -134,6 +136,9 @@ class FitnessService {
     );
 
     await batch.commit();
+
+    // Add workout minutes to the user's score in all their circles.
+    await _circleService.incrementActivityScore(userId, minutes: durationMinutes);
   }
   
   // Update user workout streak

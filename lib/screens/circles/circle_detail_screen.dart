@@ -228,7 +228,7 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen> {
                           ],
                         ),
                         trailing: Text(
-                          '${member.activityScore} pts',
+                          '${member.activityScore} min',
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 14),
                         ),
