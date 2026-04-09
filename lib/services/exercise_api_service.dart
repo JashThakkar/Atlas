@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/workout_model.dart';
+import 'exercisedb_service.dart';
 
 class ExerciseAPIService {
   final String _apiKey = dotenv.env['EXERCISE_API_KEY'] ?? '';
@@ -50,6 +51,7 @@ class ExerciseAPIService {
     required String difficulty,
     String? targetMuscle,
     int exerciseCount = 5,
+    ExerciseDBService? exerciseDBService,
   }) async {
     final exercises = await searchExercises(
       difficulty: difficulty.toLowerCase(),
@@ -58,15 +60,21 @@ class ExerciseAPIService {
     
     // Take random exercises from results
     final selectedExercises = (exercises..shuffle()).take(exerciseCount).toList();
-    
-    final workoutExercises = selectedExercises.map((ex) {
+
+    final dbService = exerciseDBService ?? ExerciseDBService();
+
+    final workoutExercises = await Future.wait(selectedExercises.map((ex) async {
+      final name = ex['name'] as String? ?? 'Exercise';
+      final media = await dbService.getExerciseMedia(name);
       return WorkoutExercise(
-        exerciseName: ex['name'] ?? 'Exercise',
+        exerciseName: name,
         sets: _getSetsForDifficulty(difficulty),
         reps: _getRepsForDifficulty(difficulty),
         notes: ex['instructions'] ?? '',
+        imageUrl: media?.imageUrl,
+        videoUrl: media?.videoUrl,
       );
-    }).toList();
+    }));
     
     return WorkoutModel(
       userId: userId,

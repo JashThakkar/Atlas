@@ -5,12 +5,16 @@ class WorkoutExercise {
   final int sets;
   final int reps;
   final String? notes;
+  final String? imageUrl;
+  final String? videoUrl;
   
   WorkoutExercise({
     required this.exerciseName,
     required this.sets,
     required this.reps,
     this.notes,
+    this.imageUrl,
+    this.videoUrl,
   });
   
   Map<String, dynamic> toMap() {
@@ -19,6 +23,8 @@ class WorkoutExercise {
       'sets': sets,
       'reps': reps,
       'notes': notes,
+      'imageUrl': imageUrl,
+      'videoUrl': videoUrl,
     };
   }
   
@@ -28,6 +34,8 @@ class WorkoutExercise {
       sets: map['sets'] ?? 3,
       reps: map['reps'] ?? 10,
       notes: map['notes'],
+      imageUrl: map['imageUrl'],
+      videoUrl: map['videoUrl'],
     );
   }
 }
