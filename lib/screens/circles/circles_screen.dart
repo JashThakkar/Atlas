@@ -78,7 +78,7 @@ class CirclesScreen extends ConsumerWidget {
                       style:
                           const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(
-                      '$memberCount member${memberCount != 1 ? 's' : ''} · My score: ${myScore} min'),
+                      '$memberCount member${memberCount != 1 ? 's' : ''} · My score: $myScore min'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/circles/${circle.id}'),
                 ),
