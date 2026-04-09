@@ -61,7 +61,7 @@ class _JoinOrCreateCircleScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Circle created!')),
         );
-        context.go('/circles/$circleId');
+        context.push('/circles/$circleId');
       }
     } catch (e) {
       if (mounted) {
@@ -91,7 +91,7 @@ class _JoinOrCreateCircleScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Joined circle!')),
         );
-        context.go('/circles/$circleId');
+        context.push('/circles/$circleId');
       }
     } catch (e) {
       if (mounted) {
