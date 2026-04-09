@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/workout_model.dart';
 import '../../providers/fitness_provider.dart';
+import '../../providers/circle_provider.dart';
 import '../../core/constants.dart';
 
 final workoutDetailProvider = StreamProvider.family<WorkoutModel?, String>((ref, workoutId) {
@@ -48,6 +49,13 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
         _durationMinutes!,
         userId: workout.userId,
       );
+
+      // Award activity points in all circles the user belongs to.
+      // Best-effort: a failure here should not block the workout completion flow.
+      try {
+        final circleService = ref.read(circleServiceProvider);
+        await circleService.incrementActivityScore(workout.userId);
+      } catch (_) {}
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
