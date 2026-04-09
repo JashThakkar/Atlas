@@ -13,53 +13,53 @@ final feedProvider = StreamProvider<List<PostModel>>((ref) {
   return socialService.getFeed();
 });
 
-final userPostsProvider = StreamProvider.family<List<PostModel>, String>((ref, userId) {
+final userPostsProvider = StreamProvider.autoDispose.family<List<PostModel>, String>((ref, userId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getUserPosts(userId);
 });
 
-final postProvider = StreamProvider.family<PostModel?, String>((ref, postId) {
+final postProvider = StreamProvider.autoDispose.family<PostModel?, String>((ref, postId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getPost(postId);
 });
 
-final postCommentsProvider = StreamProvider.family<List<CommentModel>, String>((ref, postId) {
+final postCommentsProvider = StreamProvider.autoDispose.family<List<CommentModel>, String>((ref, postId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getPostComments(postId);
 });
 
-final userFriendsProvider = StreamProvider.family<List<String>, String>((ref, userId) {
+final userFriendsProvider = StreamProvider.autoDispose.family<List<String>, String>((ref, userId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getUserFriends(userId);
 });
 
 final incomingFriendRequestsProvider =
-    StreamProvider.family<List<Map<String, dynamic>>, String>((ref, userId) {
+    StreamProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, userId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getIncomingFriendRequests(userId);
 });
 
 final outgoingFriendRequestsProvider =
-    StreamProvider.family<List<Map<String, dynamic>>, String>((ref, userId) {
+    StreamProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, userId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getOutgoingFriendRequests(userId);
 });
 
 final chatRoomsProvider =
-    StreamProvider.family<List<ChatRoom>, String>((ref, userId) {
+    StreamProvider.autoDispose.family<List<ChatRoom>, String>((ref, userId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getUserChatRooms(userId);
 });
 
 final chatMessagesProvider =
-    StreamProvider.family<List<Message>, String>((ref, chatId) {
+    StreamProvider.autoDispose.family<List<Message>, String>((ref, chatId) {
   final socialService = ref.watch(socialServiceProvider);
   return socialService.getChatMessages(chatId);
 });
 
 // Provider to fetch a user's data by ID (for friend request tiles, etc.)
 final userByIdProvider =
-    FutureProvider.family<Map<String, dynamic>?, String>((ref, userId) async {
+    FutureProvider.autoDispose.family<Map<String, dynamic>?, String>((ref, userId) async {
   final doc = await FirebaseFirestore.instance
       .collection(AppConstants.usersCollection)
       .doc(userId)

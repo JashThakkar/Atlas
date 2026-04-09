@@ -8,22 +8,22 @@ import '../models/workout_model.dart';
 final fitnessServiceProvider = Provider<FitnessService>((ref) => FitnessService());
 final exerciseAPIServiceProvider = Provider<ExerciseAPIService>((ref) => ExerciseAPIService());
 
-final exerciseLogsProvider = StreamProvider.family<List<ExerciseLogModel>, String>((ref, userId) {
+final exerciseLogsProvider = StreamProvider.autoDispose.family<List<ExerciseLogModel>, String>((ref, userId) {
   final fitnessService = ref.watch(fitnessServiceProvider);
   return fitnessService.getExerciseLogs(userId);
 });
 
-final bodyMetricsProvider = StreamProvider.family<List<BodyMetricModel>, ({String userId, String metricType})>((ref, params) {
+final bodyMetricsProvider = StreamProvider.autoDispose.family<List<BodyMetricModel>, ({String userId, String metricType})>((ref, params) {
   final fitnessService = ref.watch(fitnessServiceProvider);
   return fitnessService.getBodyMetrics(params.userId, params.metricType);
 });
 
-final userWorkoutsProvider = StreamProvider.family<List<WorkoutModel>, String>((ref, userId) {
+final userWorkoutsProvider = StreamProvider.autoDispose.family<List<WorkoutModel>, String>((ref, userId) {
   final fitnessService = ref.watch(fitnessServiceProvider);
   return fitnessService.getUserWorkouts(userId);
 });
 
-final userStatsProvider = StreamProvider.family<Map<String, dynamic>, String>((ref, userId) {
+final userStatsProvider = StreamProvider.autoDispose.family<Map<String, dynamic>, String>((ref, userId) {
   final fitnessService = ref.watch(fitnessServiceProvider);
   return fitnessService.watchUserStats(userId);
 });

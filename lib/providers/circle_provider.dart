@@ -6,11 +6,11 @@ final circleServiceProvider =
     Provider<CircleService>((ref) => CircleService());
 
 final userCirclesProvider =
-    StreamProvider.family<List<CircleModel>, String>((ref, userId) {
+    StreamProvider.autoDispose.family<List<CircleModel>, String>((ref, userId) {
   return ref.watch(circleServiceProvider).getUserCircles(userId);
 });
 
 final circleDetailProvider =
-    StreamProvider.family<CircleModel?, String>((ref, circleId) {
+    StreamProvider.autoDispose.family<CircleModel?, String>((ref, circleId) {
   return ref.watch(circleServiceProvider).getCircle(circleId);
 });
