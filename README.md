@@ -6,22 +6,94 @@ An AI-powered fitness tracking app for Android built with Flutter.
 
 ## 📲 Getting the App on Your Android Phone
 
-### Step 1 — Download the APK from GitHub Actions
+### Option A — Download the pre-built APK from GitHub Actions
 
-Every push to `main` automatically builds a release APK and uploads it as a GitHub Actions artifact.
+The APK is built on demand via GitHub Actions. Trigger a new build or grab the latest one:
 
 1. Go to the **Actions** tab at the top of this repository page.
-2. Click the latest **"Build Android APK"** workflow run that has a green ✅ checkmark.
-3. Scroll to the bottom of the run page to the **Artifacts** section.
-4. Click **`atlas-release-apk`** to download a `.zip` file.
-5. Unzip the file — inside you will find **`app-release.apk`**.
+2. Click **"Build Android APK"** in the left sidebar.
+3. To start a new build, click **Run workflow** → **Run workflow** (green button). Wait ~5 minutes for it to finish.
+4. Click the finished run (green ✅ checkmark).
+5. Scroll to the bottom of the run page to the **Artifacts** section.
+6. Click **`atlas-release-apk`** to download a `.zip` file.
+7. Unzip the file — inside you will find **`app-release.apk`**.
 
-> The artifact is kept for **30 days** per run. If it has expired, re-trigger a build by going to  
-> Actions → Build Android APK → **Run workflow**.
+> Artifacts are kept for **30 days** per run.
 
 ---
 
-### Step 2 — Install the APK on Your Android Phone
+### Option B — Build the APK yourself
+
+If you prefer to compile the APK on your own machine, follow these steps.
+
+#### Prerequisites
+
+| Tool | Version | Download |
+|---|---|---|
+| **Flutter SDK** | 3.41.x (stable) | [flutter.dev/docs/get-started/install](https://flutter.dev/docs/get-started/install) |
+| **Java (JDK)** | 17 | [adoptium.net](https://adoptium.net/) or via your package manager |
+| **Android SDK** | API 33+ | Installed automatically by Android Studio, or via `sdkmanager` |
+
+Verify your setup:
+
+```bash
+flutter doctor
+```
+
+All items relevant to Android should show a green ✅.
+
+#### Steps
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/JashThakkar/Atlas.git
+   cd Atlas
+   ```
+
+2. **Create the `.env` file**
+
+   Copy the example and fill in any API keys you want to use (the app works without most of them):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Open `.env` in a text editor and add your keys (all are optional — leave the placeholder values if you don't have them):
+
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+   # ExerciseDB and Exercise API keys are also optional
+   ```
+
+3. **Install Flutter dependencies**
+
+   ```bash
+   flutter pub get
+   ```
+
+4. **Build the release APK**
+
+   ```bash
+   flutter build apk --release
+   ```
+
+   The build takes 3–7 minutes on a typical machine.
+
+5. **Find your APK**
+
+   The finished APK is at:
+
+   ```
+   build/app/outputs/flutter-apk/app-release.apk
+   ```
+
+   Copy this file to your phone using a USB cable, Google Drive, or any method you prefer, then install it (see Step 2 below).
+
+---
+
+### Step 2 — Install the APK on Your Android Phone (applies to both options above)
 
 Android blocks installs from outside the Play Store by default. Follow these steps once to allow it.
 

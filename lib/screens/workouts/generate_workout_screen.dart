@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fitness_provider.dart';
 import '../../core/constants.dart';
-
 class GenerateWorkoutScreen extends ConsumerStatefulWidget {
   const GenerateWorkoutScreen({super.key});
 
@@ -37,11 +36,13 @@ class _GenerateWorkoutScreenState extends ConsumerState<GenerateWorkoutScreen> {
 
     try {
       final exerciseAPI = ref.read(exerciseAPIServiceProvider);
+      final exerciseDB = ref.read(exerciseDBServiceProvider);
       final workout = await exerciseAPI.generateWorkout(
         userId: user.uid,
         difficulty: _selectedDifficulty,
         targetMuscle: _selectedMuscle,
         exerciseCount: _exerciseCount,
+        exerciseDBService: exerciseDB,
       );
 
       final fitnessService = ref.read(fitnessServiceProvider);

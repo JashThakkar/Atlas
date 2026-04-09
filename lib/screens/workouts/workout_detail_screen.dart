@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/workout_model.dart';
 import '../../providers/fitness_provider.dart';
 import '../../providers/circle_provider.dart';
@@ -138,36 +140,7 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
                       ...workout.exercises.asMap().entries.map((entry) {
                         final index = entry.key;
                         final exercise = entry.value;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              child: Text('${index + 1}'),
-                            ),
-                            title: Text(exercise.exerciseName),
-                            subtitle: Text('${exercise.sets} sets × ${exercise.reps} reps'),
-                            trailing: exercise.notes != null
-                                ? IconButton(
-                                    icon: const Icon(Icons.info_outline),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: Text(exercise.exerciseName),
-                                          content: Text(exercise.notes!),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              child: const Text('Close'),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : null,
-                          ),
-                        );
+                        return _ExerciseCard(index: index, exercise: exercise);
                       }),
                       
                       if (!workout.isCompleted) ...[
@@ -231,6 +204,122 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
+      ),
+    );
+  }
+}
+
+/// Card widget that displays a single exercise with optional image and video link.
+class _ExerciseCard extends StatelessWidget {
+  const _ExerciseCard({required this.index, required this.exercise});
+
+  final int index;
+  final WorkoutExercise exercise;
+
+  Future<void> _openVideo(BuildContext context) async {
+    final url = Uri.parse(exercise.videoUrl!);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open video')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Exercise image
+          if (exercise.imageUrl != null)
+            CachedNetworkImage(
+              imageUrl: exercise.imageUrl!,
+              height: 180,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                height: 180,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+              errorWidget: (context, url, error) => Container(
+                height: 180,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Center(
+                  child: Icon(Icons.fitness_center, size: 48),
+                ),
+              ),
+            ),
+
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  child: Text('${index + 1}'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        exercise.exerciseName,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('${exercise.sets} sets × ${exercise.reps} reps'),
+                    ],
+                  ),
+                ),
+                // Info button for notes
+                if (exercise.notes != null && exercise.notes!.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    tooltip: 'Instructions',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(exercise.exerciseName),
+                          content: Text(exercise.notes!),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+
+          // Watch Video button
+          if (exercise.videoUrl != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: OutlinedButton.icon(
+                onPressed: () => _openVideo(context),
+                icon: const Icon(Icons.play_circle_outline, size: 18),
+                label: const Text('Watch Video'),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
