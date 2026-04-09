@@ -248,7 +248,7 @@ class _ExerciseCard extends StatelessWidget {
                 child: const Center(child: CircularProgressIndicator()),
               ),
               errorWidget: (context, url, error) => Container(
-                height: 120,
+                height: 180,
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: const Center(
                   child: Icon(Icons.fitness_center, size: 48),

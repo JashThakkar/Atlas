@@ -65,8 +65,12 @@ class ExerciseDBService {
       if (imageUrl == null && videoUrl == null) return null;
 
       return ExerciseMedia(imageUrl: imageUrl, videoUrl: videoUrl);
-    } catch (_) {
-      // Any network or parse error: fail silently and return null.
+    } catch (e, st) {
+      // Log the error in debug mode; fail silently so workout generation is unaffected.
+      assert(() {
+        debugPrint('[ExerciseDBService] getExerciseMedia("$name") failed: $e\n$st');
+        return true;
+      }());
       return null;
     }
   }
