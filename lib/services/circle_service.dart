@@ -95,7 +95,9 @@ class CircleService {
   }
 
   /// Increments the activity score for a user within all their circles.
-  Future<void> incrementActivityScore(String userId, {int points = 10}) async {
+  /// [minutes] is the number of minutes of experience to add.
+  Future<void> incrementActivityScore(String userId, {int minutes = 0}) async {
+    if (minutes <= 0) return;
     final snapshot = await _firestore
         .collection(AppConstants.circlesCollection)
         .where('memberIds', arrayContains: userId)
@@ -104,7 +106,7 @@ class CircleService {
     final batch = _firestore.batch();
     for (final doc in snapshot.docs) {
       batch.update(doc.reference, {
-        'activityScores.$userId': FieldValue.increment(points),
+        'activityScores.$userId': FieldValue.increment(minutes),
         'updatedAt': FieldValue.serverTimestamp(),
       });
     }
