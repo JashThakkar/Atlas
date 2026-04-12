@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/challenge_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../screens/challenges/challenge_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 class ChallengesScreen extends ConsumerWidget {
@@ -10,6 +11,8 @@ class ChallengesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final challengesAsync = ref.watch(activeChallengesProvider);
+    final user = ref.watch(currentUserProvider).value;
+    final userId = user?.uid;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,77 +43,124 @@ class ChallengesScreen extends ConsumerWidget {
             itemCount: challenges.length,
             itemBuilder: (context, index) {
               final challenge = challenges[index];
+              final hasJoined =
+                  userId != null && challenge.participants.contains(userId);
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.emoji_events, color: Colors.amber),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              challenge.title,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                child: InkWell(
+                  onTap: hasJoined
+                      ? () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => ChallengeDetailScreen(
+                                  challenge: challenge),
+                            ),
+                          );
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.emoji_events,
+                                color: Colors.amber),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                challenge.title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ),
+                            if (hasJoined)
+                              Chip(
+                                label: const Text('Joined'),
+                                backgroundColor: Colors.green.shade100,
+                                avatar: const Icon(Icons.check_circle,
+                                    color: Colors.green, size: 16),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(challenge.description),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Chip(
+                              label: Text(challenge.type),
+                              avatar: const Icon(Icons.flag, size: 16),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Target: ${challenge.targetValue}'),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Ends: ${DateFormat.yMMMd().format(challenge.endDate)}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${challenge.participants.length} participants',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (hasJoined)
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ChallengeDetailScreen(
+                                        challenge: challenge),
                                   ),
+                                );
+                              },
+                              icon: const Icon(Icons.bar_chart),
+                              label: const Text('View Progress'),
+                            ),
+                          )
+                        else
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (userId == null ||
+                                    challenge.id == null) return;
+
+                                final challengeService =
+                                    ref.read(challengeServiceProvider);
+                                await challengeService.joinChallenge(
+                                    challenge.id!, userId);
+
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Joined challenge!')),
+                                  );
+                                }
+                              },
+                              child: const Text('Join Challenge'),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(challenge.description),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Chip(
-                            label: Text(challenge.type),
-                            avatar: const Icon(Icons.flag, size: 16),
-                          ),
-                          const SizedBox(width: 8),
-                          Text('Target: ${challenge.targetValue}'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Ends: ${DateFormat.yMMMd().format(challenge.endDate)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${challenge.participants.length} participants',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final user = ref.read(currentUserProvider).value;
-                            if (user == null || challenge.id == null) return;
-
-                            final challengeService = ref.read(challengeServiceProvider);
-                            await challengeService.joinChallenge(challenge.id!, user.uid);
-
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Joined challenge!')),
-                              );
-                            }
-                          },
-                          child: const Text('Join Challenge'),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );

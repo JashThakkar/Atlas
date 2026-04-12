@@ -15,7 +15,6 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String _priority = 'Medium';
   bool _isSubmitting = false;
 
   @override
@@ -39,7 +38,6 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         userName: user.displayName,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
-        priority: _priority,
         createdAt: DateTime.now(),
       );
 
@@ -117,23 +115,6 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
                     return 'Please enter a description';
                   }
                   return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Priority',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'Low', label: Text('Low')),
-                  ButtonSegment(value: 'Medium', label: Text('Medium')),
-                  ButtonSegment(value: 'High', label: Text('High')),
-                ],
-                selected: {_priority},
-                onSelectionChanged: (Set<String> newSelection) {
-                  setState(() => _priority = newSelection.first);
                 },
               ),
               const SizedBox(height: 32),
