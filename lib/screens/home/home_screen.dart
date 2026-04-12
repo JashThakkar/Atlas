@@ -112,10 +112,6 @@ class HomeScreen extends ConsumerWidget {
                 onPressed: () => context.push('/messages'),
                 tooltip: 'Messages',
               ),
-              IconButton(
-                icon: const Icon(Icons.notifications),
-                onPressed: () {},
-              ),
             ],
           ),
           drawer: const AppDrawer(),

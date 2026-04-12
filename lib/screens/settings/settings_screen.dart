@@ -16,6 +16,10 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _dailyTipEnabled = true;
   bool _workoutReminderEnabled = true;
+  int _dailyTipHour = 8;
+  int _dailyTipMinute = 0;
+  int _workoutReminderHour = 18;
+  int _workoutReminderMinute = 0;
   final _apiKeyController = TextEditingController();
   bool _apiKeyObscured = true;
   bool _apiKeySaving = false;
@@ -39,6 +43,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() {
       _dailyTipEnabled = prefs.getBool('dailyTipEnabled') ?? true;
       _workoutReminderEnabled = prefs.getBool('workoutReminderEnabled') ?? true;
+      _dailyTipHour = prefs.getInt('dailyTipHour') ?? 8;
+      _dailyTipMinute = prefs.getInt('dailyTipMinute') ?? 0;
+      _workoutReminderHour = prefs.getInt('workoutReminderHour') ?? 18;
+      _workoutReminderMinute = prefs.getInt('workoutReminderMinute') ?? 0;
       _apiKeyController.text = savedKey;
     });
   }
@@ -155,10 +163,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: const Icon(Icons.access_time),
               title: const Text('Daily Tip Time'),
               subtitle: const Text('Tap to change the time'),
+              trailing: Text(
+                TimeOfDay(hour: _dailyTipHour, minute: _dailyTipMinute)
+                    .format(context),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               onTap: () async {
                 final time = await showTimePicker(
                   context: context,
-                  initialTime: const TimeOfDay(hour: 8, minute: 0),
+                  initialTime: TimeOfDay(
+                      hour: _dailyTipHour, minute: _dailyTipMinute),
                 );
                 if (time != null) {
                   final notificationService =
@@ -169,6 +183,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   await prefs.setInt('dailyTipHour', time.hour);
                   await prefs.setInt('dailyTipMinute', time.minute);
                   if (context.mounted) {
+                    setState(() {
+                      _dailyTipHour = time.hour;
+                      _dailyTipMinute = time.minute;
+                    });
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Daily tip time updated!')),
                     );
@@ -198,10 +216,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: const Icon(Icons.access_time),
               title: const Text('Workout Reminder Time'),
               subtitle: const Text('Tap to change the time'),
+              trailing: Text(
+                TimeOfDay(
+                        hour: _workoutReminderHour,
+                        minute: _workoutReminderMinute)
+                    .format(context),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               onTap: () async {
                 final time = await showTimePicker(
                   context: context,
-                  initialTime: const TimeOfDay(hour: 18, minute: 0),
+                  initialTime: TimeOfDay(
+                      hour: _workoutReminderHour,
+                      minute: _workoutReminderMinute),
                 );
                 if (time != null) {
                   final notificationService =
@@ -212,6 +239,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   await prefs.setInt('workoutReminderHour', time.hour);
                   await prefs.setInt('workoutReminderMinute', time.minute);
                   if (context.mounted) {
+                    setState(() {
+                      _workoutReminderHour = time.hour;
+                      _workoutReminderMinute = time.minute;
+                    });
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                           content: Text('Workout reminder time updated!')),
