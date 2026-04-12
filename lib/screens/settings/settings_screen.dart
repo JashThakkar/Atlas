@@ -182,7 +182,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setInt('dailyTipHour', time.hour);
                   await prefs.setInt('dailyTipMinute', time.minute);
-                  if (mounted) {
+                  if (context.mounted) {
                     setState(() {
                       _dailyTipHour = time.hour;
                       _dailyTipMinute = time.minute;
@@ -238,7 +238,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setInt('workoutReminderHour', time.hour);
                   await prefs.setInt('workoutReminderMinute', time.minute);
-                  if (mounted) {
+                  if (context.mounted) {
                     setState(() {
                       _workoutReminderHour = time.hour;
                       _workoutReminderMinute = time.minute;
